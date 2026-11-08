@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-BASE_NUMERIC = ["oil_rate", "gas_rate", "water_rate", "reservoir_pressure", "bhp", "water_cut", "gor", "choke", "cumulative_oil", "cumulative_gas"]
+BASE_NUMERIC = ["oil_rate", "gas_rate", "water_rate", "reservoir_pressure", "bhp", "water_cut", "gor", "choke", "cumulative_oil", "cumulative_gas", "downhole_temperature", "tubing_pressure", "annulus_pressure", "on_stream_hours", "wellhead_pressure", "wellhead_temperature", "choke_pressure_drop"]
 
 def normalize_columns(df, mapping=None):
     """Renaming user columns to canonical names using an explicit alias map."""

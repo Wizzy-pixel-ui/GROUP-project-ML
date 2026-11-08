@@ -1,0 +1,3 @@
+# Optional; install separately for Hugging Face Chronos time-series inference
+chronos-forecasting>=2.0
+torch>=2.2

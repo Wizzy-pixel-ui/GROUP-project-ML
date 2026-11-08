@@ -28,18 +28,23 @@ For this first stage, the executable baseline models future oil rate. The notebo
 
 ## Current capability
 
+A real field dataset is now included: the Equinor Volve production workbook and a canonicalized producer-only daily panel. This is genuine field data, but it is **not a direct solution-gas-drive natural-flow transition dataset**. Volve was produced with water injection for pressure support, and the production workbook does not identify natural-flow/lift status or a transition event. See [Volve data provenance and suitability](docs/volve_data_and_license.md).
+
 | Capability | Status | Notes |
 |---|---|---|
 | CSV, Excel, Parquet, JSON ingestion | Implemented | Requires explicit column mapping and unit checks |
 | Per-well history features | Implemented | Lag, rolling mean, slope, elapsed time, pressure/bubble-point relation |
-| Natural-flow inadequate event label | Implemented | Configurable rate threshold and consecutive-period rule |
+| Natural-flow inadequate event label | Synthetic example only | Configurable threshold logic is not validated against field transition records |
 | Fixed-horizon oil-rate regression | Implemented | HistGradientBoostingRegressor baseline |
 | Held-out-well evaluation | Implemented | Prevents rows from the same well leaking across split |
 | Dashboard-style metric/prediction tables and charts | Implemented in notebook | No GUI; exports CSV reports and renders plots inline |
-| Pressure forecasts | Not field-trained | Need measured, consistent pressure targets and separate validation |
+| Downhole-pressure forecasts | Implemented in Volve benchmark | Single-field test only; HGB is worse than persistence in current holdouts |
 | Calibrated time-to-inadequacy probability | Not yet implemented | Requires event and censoring data across wells |
 | 30 real eligible solution-gas-drive wells | Not included | Source licenses/login and reservoir-drive documentation must be verified |
 | Synthetic demonstration data | Included | Pipeline testing only; not evidence of predictive performance |
+| Real Volve field production data | Included | Six producer wells; supports rate/pressure forecasting experiments, not natural-flow transition labels |
+| Hugging Face Chronos-2 | Implemented as optional benchmark | Generic pretrained model; scores poorly on the selected Volve tail holdout |
+| Hugging Face Chronos-Bolt-Small | Implemented as optional benchmark | Beats persistence on MAE in one held-out well tail, but is not field-validated |
 
 ## Repository structure
 
@@ -47,21 +52,28 @@ For this first stage, the executable baseline models future oil rate. The notebo
 .
 ├── README.md
 ├── requirements.txt
+├── requirements-models.txt   # Optional Hugging Face Chronos inference
 ├── environment.yml
 ├── configs/project.yaml
 ├── data/
 │   ├── README.md
 │   ├── raw/                 # Authorized, immutable source data only
 │   ├── processed/           # Derived data with transformation notes
-│   └── synthetic/demo_well_monthly.csv
+│   ├── synthetic/demo_well_monthly.csv
+│   ├── raw/volve/Volve production data.xlsx
+│   └── processed/volve_daily_producers.csv
 ├── docs/
+│   ├── volve_data_and_license.md
+│   ├── huggingface_models.md
+│   ├── volve_field_results.md
 │   ├── canonical_schema.csv
 │   ├── data_provenance.csv
 │   ├── model_card.md
 │   └── workflow.mmd
 ├── notebooks/01_natural_flow_adequacy_baseline.ipynb
-├── reports/                 # Generated demo outputs
-├── src/sgd_ml/              # Reusable Python functions
+├── notebooks/02_volve_real_field_benchmark.ipynb
+├── reports/                 # Generated outputs (not committed by default)
+├── src/sgd_ml/              # Reusable Python functions, including optional HF adapters
 └── tests/
 ```
 
@@ -94,24 +106,30 @@ pip install -r requirements.txt
 jupyter lab
 ```
 
-Open `notebooks/01_natural_flow_adequacy_baseline.ipynb` and run cells in order. The default uses the synthetic fixture. For field data, place an authorized file under `data/raw/`, edit `DATA_PATH`, map its columns to the canonical names, document units, verify sampling cadence, and replace the example threshold with a project-approved definition. The project can also be installed in editable mode after adding packaging metadata in a later iteration.
+Open `notebooks/01_natural_flow_adequacy_baseline.ipynb` for the synthetic software demonstration. Open `notebooks/02_volve_real_field_benchmark.ipynb` for the included real field-data evaluation. For optional Hugging Face models, install `requirements-models.txt` separately; this installs PyTorch/Chronos dependencies and downloads model weights at first inference. For other field data, map source columns, document units, verify cadence, and define the target before fitting.
 
-## Understanding the demonstration results
-The synthetic CSV has 36 simulated well histories and exists to verify the pipeline and plotting cells. Any notebook metrics produced from it describe only this artificial dataset. They must not be reported as field accuracy, evidence of generalization, or validation of solution-gas-drive physics. Do not claim “accurate predictions” until evaluation on suitable independent field wells has been completed.
+## Understanding the results
+The synthetic CSV has 36 artificial well histories and exists only to verify pipeline behavior. Notebook 02 uses real Volve observations and currently shows that the tabular model does **not** beat persistence in the selected holdouts. For the one held-out well split, oil-rate MAE is about 294 versus persistence MAE about 104 in source units; downhole-pressure MAE is about 18.2 versus persistence about 12.3. In the purged future-time split, oil-rate MAE is about 140 versus persistence about 53.0, and pressure MAE about 19.6 versus persistence about 13.5. These are preliminary results from one field and one split configuration, not general performance estimates.
+
+On the same 15/9-F-12 holdout, Chronos-Bolt-Small produced a 275 MAE versus persistence at about 389, while Chronos-2 was poor (raw MAE about 507; nonnegative-clipped MAE about 388). Chronos-Bolt had negative R² and 66.7% coverage for its nominal 80% interval; Chronos-2 had about 19% interval coverage and negative raw rates for about 90% of the horizon. This is a one-well long-horizon result, not evidence of reliable generalization. Do not treat these models as accepted predictors. Details and cell outputs are in [the Volve benchmark notebook](notebooks/02_volve_real_field_benchmark.ipynb) and [results note](docs/volve_field_results.md).
 
 ## Data sources and provenance
+
+The repository now includes a small Volve production workbook rather than the approximately multi-terabyte full-field archive. It covers daily production history and operating measurements for six producing wellbores. The source license permits sharing with attribution and a link to the terms, subject to a no-sale condition; see [the attribution and license note](docs/volve_data_and_license.md). The Norwegian Offshore Directorate describes the field as produced with water injection for pressure support, so this source is useful field data but does not establish a solution-gas-drive transition label.
+
+Optional pretrained model benchmarks are documented in [Hugging Face model notes](docs/huggingface_models.md). Chronos-2 and Chronos-Bolt-Small are general time-series models; model weights download separately and are not stored in the repository.
 The [SPE Data Repository](https://www.spe.org/en/industry/data-repository/) provides rate-transient data intended for research and training; a site login is required and its use stipulates proper citation. Check individual files for documented reservoir drive, variable definitions, units, and lift status. [Equinor Volve](https://www.equinor.com/energy/volve-data-sharing) is a substantial field dataset with production and subsurface data; verify well/reservoir suitability rather than assuming every well is solution-gas drive. The [Mendeley tight/unconventional production collection](https://data.mendeley.com/datasets/5pzzgngw72) includes seven history files but is not a direct solution-gas-drive oil dataset. See `docs/data_provenance.csv`; update it when actual assets are downloaded.
 
 ## Limitations and responsible use
-Current data are synthetic. No field accuracy is established. Public datasets may have incomplete pressure, PVT, drive mechanism, intervention, and economic context. Different sources may use incompatible units, sampling frequencies, allocation methods, and definitions. Observational prediction does not establish that an artificial-lift intervention caused a production change. Model recommendations require engineering and economic review, uncertainty communication, out-of-distribution checks, and local operating approval.
+The repository now includes one real-field dataset, but no field validation exists for natural-flow inadequacy or solution-gas-drive transitions. The current regressors underperform persistence in the selected Volve holdouts. Public datasets may have incomplete pressure, PVT, drive mechanism, intervention, and economic context. Different sources may use incompatible units, sampling frequencies, allocation methods, and definitions. Observational prediction does not establish that an artificial-lift intervention caused a production change. Model recommendations require engineering and economic review, uncertainty communication, out-of-distribution checks, and local operating approval.
 
 ## Roadmap
 1. Select an operational and economic inadequacy definition with the supervisor.
-2. Obtain and document 30 or more eligible well histories if feasible; prioritize documented solution-gas-drive cases and preserve source citations.
-3. Build a unit-aware import/mapping layer and data-quality report.
-4. Add persistence and decline-curve baselines, grouped nested validation, and temporal holdout.
-5. Add separately validated pressure targets, probabilistic time-to-event forecasts, and prediction intervals.
-6. Compare performance across new and existing wells and reservoir/region strata.
+2. Obtain and document eligible natural-flow solution-gas-drive well histories, including lift-transition and censoring information; Volve provides a real-field benchmark but not this target.
+3. Obtain and document additional eligible solution-gas-drive well histories if feasible; preserve source citations and operational status.
+4. Calibrate a reservoir simulator to those field wells before using synthetic samples for augmentation.
+5. Add repeated grouped and purged temporal validation with persistence, decline-curve, and Chronos baselines.
+6. Add a censored time-to-event model only after transition/event labels and natural-flow status are verified.
 7. Add scenario/decision analysis only after forecast validation; this repository does not yet choose an artificial-lift method.
 
 ## Contributors and citation

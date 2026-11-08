@@ -8,5 +8,8 @@ reports/*
 !reports/.gitkeep
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/volve/
+!data/raw/volve/Volve\ production\ data.xlsx
 data/processed/*
 !data/processed/.gitkeep
+!data/processed/volve_daily_producers.csv

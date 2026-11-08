@@ -13,3 +13,17 @@ def test_schema_feature_and_label_pipeline():
     z=add_forward_targets(y,horizons=(1,))
     assert "gor" in z and "oil_rate_mean3" in z and "oil_rate_future_1m" in z
     assert int(z.inadequate_now.sum()) == 1
+
+
+def test_volve_field_dataset_ingestion():
+    from sgd_ml.volve import load_volve_daily, aggregate_volve_monthly, add_monthly_forecast_targets
+    file_path = ROOT / "data/raw/volve/Volve production data.xlsx"
+    daily = load_volve_daily(file_path)
+    assert daily.well_id.nunique() == 6
+    assert len(daily) == 9143
+    assert daily.lift_status.str.contains("unknown").all()
+    monthly = aggregate_volve_monthly(daily)
+    targets = add_monthly_forecast_targets(monthly, horizons=(1,))
+    assert "oil_rate_future_1m" in targets
+    assert "bhp_future_1m" in targets
+    assert targets.development_context.str.contains("water-injection").all()
