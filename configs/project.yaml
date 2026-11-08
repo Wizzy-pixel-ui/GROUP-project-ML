@@ -1,0 +1,21 @@
+project:
+  name: "Solution-Gas-Drive Natural-Flow Adequacy Prediction"
+  version: "0.1.0"
+  status: "research prototype; not validated for field decisions"
+data:
+  canonical_columns: [well_id, date, oil_rate]
+  accepted_formats: [csv, xlsx, xls, parquet, json]
+  sample_file: data/synthetic/demo_well_monthly.csv
+labels:
+  natural_flow_oil_rate_threshold: 10.0
+  threshold_units: "user must confirm; example only"
+  consecutive_periods: 2
+  forecast_horizons_months: [3, 6, 12]
+validation:
+  primary: "group split by well"
+  temporal_holdout_required: true
+  no_random_row_split: true
+models:
+  continuous_targets: [oil_rate_future, reservoir_pressure_future]
+  starting_algorithm: "HistGradientBoostingRegressor with imputation and categorical encoding"
+  adequacy_event: "survival/time-to-event model is planned after field event labels are available"

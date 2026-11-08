@@ -1,0 +1,4 @@
+asset,source_url,license,download_date,scope,notes
+SPE Data Repository,https://www.spe.org/en/industry/data-repository/,Repository terms; proper citation required,,Rate transient analysis datasets,Site login required; select datasets and record exact IDs after access
+Equinor Volve,https://www.equinor.com/energy/volve-data-sharing,See source terms,,Field production and subsurface,Confirm drive mechanism and compatible variables for each well
+Mendeley tight/unconventional production,https://data.mendeley.com/datasets/5pzzgngw72,CC BY 4.0,,Seven production-history spreadsheets,Tight/unconventional gas; not direct solution-gas-drive oil evidence

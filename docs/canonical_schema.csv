@@ -1,0 +1,18 @@
+canonical_name,required,units_or_format,description
+well_id,yes,string,Stable identifier unique to a well
+ date,no,ISO date,Observation date; canonicalization strips surrounding whitespace
+ oil_rate,yes,volume/time,Oil production rate with units recorded in metadata
+ gas_rate,no,volume/time,Gas production rate
+ water_rate,no,volume/time,Water production rate
+ reservoir_pressure,no,pressure,Measured or estimated reservoir pressure
+ bhp,no,pressure,Bottomhole flowing pressure
+ bubble_point_pressure,no,pressure,PVT bubble point pressure
+ initial_reservoir_pressure,no,pressure,Initial reservoir pressure
+ gor,no,gas volume/oil volume,Gas-oil ratio
+ water_cut,no,fraction,Water fraction of total produced liquid
+ choke,no,documented unit,Choke setting
+ cumulative_oil,no,volume,Cumulative oil production
+ cumulative_gas,no,volume,Cumulative gas production
+ reservoir_type,no,categorical,Documented drive/reservoir category
+ region,no,categorical,Generalized region; no sensitive location required
+ lift_active,no,boolean,Whether artificial lift is operating during observation

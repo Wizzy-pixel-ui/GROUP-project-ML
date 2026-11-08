@@ -1,0 +1,12 @@
+flowchart LR
+ A[Raw field files] --> B[Unit and schema audit]
+ B --> C[Canonical well-month table]
+ C --> D[History features and regime flags]
+ D --> E{Validation design}
+ E --> F[Unseen-well holdout]
+ E --> G[Forward-time holdout]
+ F --> H[Rate and pressure forecasts]
+ G --> H
+ H --> I[Metrics, intervals, subgroup checks]
+ I --> J[Engineering review]
+ K[Synthetic fixture] -. pipeline tests only .-> B
