@@ -1,106 +1,93 @@
-# GROUP project ML — Natural-Flow Adequacy Prediction
+# GROUP Project ML: Predicting Natural-Flow Decline and Planning Artificial Lift
 
-## Table of contents
-1. [Project overview](#project-overview)
-2. [Research question and scope](#research-question-and-scope)
-3. [Current capability](#current-capability)
-4. [Repository structure](#repository-structure)
-5. [Data requirements and formats](#data-requirements-and-formats)
-6. [Feature engineering](#feature-engineering)
-7. [Algorithms and rationale](#algorithms-and-rationale)
-8. [Validation and metrics](#validation-and-metrics)
-9. [Run the project](#run-the-project)
-10. [Understanding the demonstration results](#understanding-the-demonstration-results)
-11. [Data sources and provenance](#data-sources-and-provenance)
-12. [Limitations and responsible use](#limitations-and-responsible-use)
-13. [Roadmap](#roadmap)
-14. [Contributors and citation](#contributors-and-citation)
+We are building a machine-learning workflow to study when a well’s natural flow may no longer meet an agreed production requirement. Our longer-term goal is to use production and reservoir history to help engineers assess artificial-lift timing and compare feasible lift options.
 
-## Project overview
-This repository contains the first research prototype for predicting when a well's natural flow may become inadequate. The intended model will consider documented reservoir type, generalized region, production history, current pressure/operating state, and well/reservoir properties. The current version establishes a transparent data and validation workflow. It is not yet a field-validated predictor, automated lift selector, or operating tool.
+We want to be clear about what we have today: this repository is a research prototype. It can load and analyze tabular well data through Python notebooks, forecast selected production and pressure targets, and compare several models. It does **not** yet identify a validated natural-flow transition, ask questions through an interactive app, or recommend an artificial-lift method. We explain below what we have built, how to run it with data, and what must be added before we can answer the lift-selection question responsibly.
 
-The main deliverable is a Jupyter notebook designed to be run cell by cell. It ingests tabular well histories, applies a canonical schema, creates history features, defines a configurable threshold event, evaluates a fixed-horizon oil-rate model on held-out wells, and produces tables and diagnostic charts. No graphical user interface is created.
+## Contents
 
-## Research question and scope
-**Question:** Given a well's observed history and current documented conditions, how accurately can we forecast future natural-flow oil rate and estimate the time until a project-defined inadequate-flow condition?
+1. [What we are trying to answer](#what-we-are-trying-to-answer)
+2. [What we built, from the first model to the current comparison](#what-we-built-from-the-first-model-to-the-current-comparison)
+3. [Algorithms we use and why](#algorithms-we-use-and-why)
+4. [What data the code accepts](#what-data-the-code-accepts)
+5. [How to run it with our own well data](#how-to-run-it-with-our-own-well-data)
+6. [What information we need for an artificial-lift assessment](#what-information-we-need-for-an-artificial-lift-assessment)
+7. [What the project returns](#what-the-project-returns)
+8. [What the current field results tell us](#what-the-current-field-results-tell-us)
+9. [Project files](#project-files)
+10. [What is not built yet](#what-is-not-built-yet)
+11. [Data sources, licensing, and privacy](#data-sources-licensing-and-privacy)
+12. [Our next steps](#our-next-steps)
+13. [References and contribution notes](#references-and-contribution-notes)
 
-For this first stage, the executable baseline models future oil rate. The notebook also makes an explicit inadequacy label using an example threshold. The threshold is a project decision, not a universal reservoir-engineering constant. A proper time-to-event model and pressure prediction are subsequent validation tasks once representative field observations, intervention records, and well-level event/censoring definitions are assembled.
+## What we are trying to answer
 
-## Current capability
+Our main question is: **using a well’s documented history and current conditions, can we forecast the rate and pressure trend, and can we estimate when natural flow will fall below a production requirement chosen for the project?**
 
-A real field dataset is now included: the Equinor Volve production workbook and a canonicalized producer-only daily panel. This is genuine field data, but it is **not a direct solution-gas-drive natural-flow transition dataset**. Volve was produced with water injection for pressure support, and the production workbook does not identify natural-flow/lift status or a transition event. See [Volve data provenance and suitability](docs/volve_data_and_license.md).
+Answering that question requires more than a declining oil-rate curve. We need to know the well’s reservoir and fluid context, how it is being operated, whether it is naturally flowing or already lifted, what interventions have occurred, and what “inadequate” means for the project. The eventual lift decision also depends on the well design, available power and gas, facilities, costs, and operating constraints.
 
-| Capability | Status | Notes |
-|---|---|---|
-| CSV, Excel, Parquet, JSON ingestion | Implemented | Requires explicit column mapping and unit checks |
-| Per-well history features | Implemented | Lag, rolling mean, slope, elapsed time, pressure/bubble-point relation |
-| Natural-flow inadequate event label | Synthetic example only | Configurable threshold logic is not validated against field transition records |
-| Fixed-horizon oil-rate regression | Implemented | HistGradientBoostingRegressor baseline |
-| Arps decline curves | Implemented | Exponential, harmonic, and hyperbolic candidates; AICc selection on training history |
-| Held-out-well evaluation | Implemented | Prevents rows from the same well leaking across split |
-| Dashboard-style metric/prediction tables and charts | Implemented in notebook | No GUI; exports CSV reports and renders plots inline |
-| Downhole-pressure forecasts | Implemented in Volve benchmark | Single-field test only; HGB is worse than persistence in current holdouts |
-| Calibrated time-to-inadequacy probability | Not yet implemented | Requires event and censoring data across wells |
-| 30 real eligible solution-gas-drive wells | Not included | Source licenses/login and reservoir-drive documentation must be verified |
-| Synthetic demonstration data | Included | Pipeline testing only; not evidence of predictive performance |
-| Real Volve field production data | Included | Six producer wells; supports rate/pressure forecasting experiments, not natural-flow transition labels |
-| Hugging Face Chronos-2 | Implemented as optional benchmark | Generic pretrained model; scores poorly on the selected Volve tail holdout |
-| Hugging Face Chronos-Bolt-Small | Implemented as optional benchmark | Beats persistence on MAE in one held-out well tail, but is not field-validated |
+The code we have now is the foundation for that work: tabular loading, column mapping, history features, regression forecasts, field-data checks, and model comparisons. We have not yet trained a model on labeled solution-gas-drive natural-flow transitions.
 
-## Repository structure
+## What we built, from the first model to the current comparison
 
-```text
-.
-├── README.md
-├── requirements.txt
-├── requirements-models.txt   # Optional Hugging Face Chronos inference
-├── environment.yml
-├── configs/project.yaml
-├── data/
-│   ├── README.md
-│   ├── raw/                 # Authorized, immutable source data only
-│   ├── processed/           # Derived data with transformation notes
-│   ├── synthetic/demo_well_monthly.csv
-│   ├── raw/volve/Volve production data.xlsx
-│   └── processed/volve_daily_producers.csv
-├── docs/
-│   ├── volve_data_and_license.md
-│   ├── huggingface_models.md
-│   ├── volve_field_results.md
-│   ├── arps_method.md
-│   ├── canonical_schema.csv
-│   ├── data_provenance.csv
-│   ├── model_card.md
-│   └── workflow.mmd
-├── notebooks/01_natural_flow_adequacy_baseline.ipynb
-├── notebooks/02_volve_real_field_benchmark.ipynb
-├── scripts/compare_arps_models.py
-├── reports/arps_comparison/ # Reproducible reference metrics, forecasts, metadata, and chart
-├── src/sgd_ml/              # Reusable Python functions, including arps.py and comparison utilities
-└── tests/
-```
+| Stage | What we added | Why we added it | What it demonstrates—and what it does not |
+|---|---|---|---|
+| 1. Reproducible data workflow | A canonical well-history format, file loading, column mapping, data checks, and per-well history features | Different field files use different names, dates, units, and frequencies. We needed one structure before we could compare wells. | Shows how data can be prepared. It does not automatically determine units or fix inconsistent measurements. |
+| 2. Synthetic pipeline test | A small example with 36 artificial well histories and a configurable low-rate rule | We initially needed data to verify that the notebook, feature creation, model training, and charts ran end to end. | Tests software flow only. The generated values are not field observations and do not establish predictive accuracy. |
+| 3. First machine-learning baseline | A `HistGradientBoostingRegressor` forecasting oil rate three monthly periods ahead, with grouped-well and time-based evaluation | Gradient boosting handles nonlinear relationships in tabular features and provides a practical baseline before attempting more complex models. | The three-month horizon and threshold are demo settings. It is not trained to predict a real lift-transition label. |
+| 4. Real field benchmark | Equinor Volve daily production data for six producer wellbores, converted to a documented monthly panel; oil-rate and downhole-pressure forecasts | We needed a real-data test to reveal issues that synthetic data cannot show, including missing measurements and operational changes. | This is genuine field data, but it does not verify natural-flow/lift status or solution-gas-drive transition events. Volve used water-injection pressure support. |
+| 5. Pretrained time-series comparison | Optional zero-shot Amazon Chronos-2 and Chronos-Bolt-Small forecasts | We wanted to see whether general pretrained time-series models offered a useful comparison without training their weights on this small field subset. | They are general-purpose models, not petroleum models. Their performance on one Volve well is not evidence of broad transfer. |
+| 6. Arps decline comparison | Exponential, harmonic, and hyperbolic Arps curves, selected by AICc using the training history only | Arps is a familiar engineering decline baseline. It lets us compare a fitted decline trend with the data-driven and pretrained forecasts. | It models positive producing-rate decline. It does not model shut-ins, restarts, lift transitions, pressure support, or a recommended lift method. |
 
-## Data requirements and formats
-A canonical record is one well at one date. Required columns are `well_id`, `date`, and `oil_rate`. Recommended columns include `gas_rate`, `water_rate`, `reservoir_pressure`, `bhp`, `bubble_point_pressure`, `initial_reservoir_pressure`, `gor`, `water_cut`, `choke`, `cumulative_oil`, `cumulative_gas`, `reservoir_type`, `region`, `lift_active`, and intervention/shut-in flags.
+We keep the synthetic and real-field experiments separate. We do not combine their scores into one accuracy number.
 
-Supported file formats are CSV, XLSX/XLS, Parquet, and JSON. “Any format” cannot be safely interpreted automatically. For each source, configure a column map, establish measurement units and time cadence, and resolve duplicate well-date records. Convert compatible data to common units before combining. Keep a source/license/access-date record. Never commit confidential or restricted field data to a public repository.
+## Algorithms we use and why
 
-## Feature engineering
-History features are constructed independently within each well. The initial feature set includes lagged rates and pressures, trailing rolling means, short-window trend slopes, elapsed producing time, calendar context, GOR, water cut, cumulative production, and reservoir pressure relative to bubble point where fields exist. Feature values are shifted to use only history available at the forecast origin. Operating mode, lift status, shut-ins and interventions must be tracked so changes in operating policy are not mistaken for reservoir depletion.
+| Method | Role in this project | Why it is included | Important limitation |
+|---|---|---|---|
+| Lag, rolling, and trend feature engineering | Creates past-rate, pressure, and operating-history inputs separately within each well | Recent behavior and trajectory can contain useful information beyond a single current measurement. | Features are only as meaningful as the source columns, sampling intervals, units, and operating records. |
+| Rule-based low-rate label | Demonstrates a user-configurable threshold and consecutive-period rule in the synthetic notebook | It makes the idea of “inadequate” explicit rather than pretending there is one universal threshold. | This is a rule, not a learned transition model, and it is not validated against field transition events. |
+| `HistGradientBoostingRegressor` | Main tabular regression baseline for fixed-horizon oil-rate and downhole-pressure targets | It can represent nonlinear relationships and works with engineered tabular features. Numeric inputs are median-imputed with missingness indicators and scaled; categorical inputs are mode-imputed and one-hot encoded. | In the Volve holdouts, the original single-step model performed worse than persistence. The longer recursive comparison is a separate experiment. |
+| Persistence | Predicts that the next rate or pressure will equal the latest observed value | A simple baseline tells us whether a more complicated method is adding value. | It is not a physical model and can fail badly after a shut-in, restart, intervention, or changing operating conditions. |
+| Arps exponential, harmonic, and hyperbolic decline | Fits positive oil-rate observations; AICc chooses among the three curve forms using the context window | It provides an interpretable decline-curve baseline against the same holdout. | A smooth decline assumption does not describe changing well operation or zero-rate periods. The fitted curve parameters need engineering review. |
+| Chronos-2 and Chronos-Bolt-Small | Optional zero-shot oil-rate forecasts from pretrained Hugging Face models | They provide an external time-series comparison without field-specific fine-tuning. | They are not trained for reservoir engineering; in this test, prediction intervals were under-covered and R² was negative. |
+| MAE, RMSE, R², and interval coverage | Measures point forecast errors and checks how often observations fall inside model intervals | No single metric tells the whole story. We report errors in target units and compare with baselines. | These metrics assess the tested forecasts—not lift recommendations or future-field accuracy. There is no universal “accuracy percentage” for this regression task. |
 
-Geographical features should start with generalized basin/region or geological setting. Fine location can reveal sensitive information and can create misleading shortcuts. Reservoir drive mechanism should be sourced or engineering-reviewed, not inferred from a dataset title alone.
+For Arps, we fit the exponential equation `q(t) = qi * exp(-Di * t)` and the hyperbolic equation `q(t) = qi / (1 + b * Di * t)^(1 / b)`. Harmonic decline is the hyperbolic special case with `b = 1`; exponential fixes `b = 0`. Time and `Di` are expressed in months in the current script. The optimizer fits positive-rate history in log-rate space with robust least squares. Zero-rate months are omitted from the fit, although they remain part of the forecast evaluation.
 
-## Algorithms and rationale
-The first model is a scikit-learn `HistGradientBoostingRegressor` with imputation and categorical encoding. It is selected as a practical nonlinear tabular baseline for mixed well descriptors and history features. It is not asserted to be the best model for every dataset.
+We do **not** use a trained event classifier, survival model, neural network, or lift-selection algorithm in the current project. Some of these methods may be worth testing after we have enough correctly labeled field histories, but they are not part of the current results.
 
-The evaluation compares persistence (future rate equals the latest observed rate), a recursive HistGradientBoosting model, Arps decline curves, and optional Chronos time-series models. The Arps fitter evaluates exponential, harmonic, and hyperbolic forms and selects using AICc on training-only positive-rate history. A survival model or discrete-time event hazard model is suitable for time-to-inadequacy once events and censored histories are consistently defined. Sequential neural networks are not a default: they need enough long, consistent histories and must outperform simpler baselines on well-held-out and forward-time tests.
+In the synthetic notebook, `NATURAL_FLOW_THRESHOLD = 10.0` source-rate units, `CONSECUTIVE_PERIODS = 2`, and `HORIZON = 3` monthly periods are illustrative code settings. They are there so we can see the pipeline run; they are not recommended operating limits. We must replace them with the project’s agreed units, criterion, and horizon before interpreting any output.
 
-## Validation and metrics
-The primary split holds out entire wells to test generalization to new wells. A separate forward-time split is needed to evaluate forecasts for previously observed wells. Hyperparameter selection happens inside training data only. Report MAE and RMSE in target units, R-squared as secondary context, sample/well counts, baselines, and uncertainty. Regression does not have a universal meaningful “accuracy percentage.” For event prediction, use time-to-event error, discrimination, calibration, and prediction-window coverage. Review errors by reservoir type, region, operating regime, and data completeness.
+## What data the code accepts
 
-Avoid random row splits: adjacent months from the same well are highly related and can leak information between test and training. Never include future data, post-lift data, or future cumulative production in forecast-origin features.
+The general table loader in `src/sgd_ml/io.py` reads **CSV, XLSX, XLS, Parquet, and JSON** files. It reads a table; it does not infer arbitrary file formats, recognize every vendor schema, or decide what a column means. Scanned PDFs, images, and unsupported formats must first be converted into a structured table.
 
-## Run the project
+The generic baseline requires at least one row per well and date with these three canonical columns:
+
+| Canonical column | Meaning | Required for the current generic notebook? |
+|---|---|---:|
+| `well_id` | Stable well identifier | Yes |
+| `date` | Observation date, parseable as a date | Yes |
+| `oil_rate` | Oil-rate target in a consistent, documented unit | Yes |
+| `gas_rate`, `water_rate` | Gas and water production rates | No; useful when available |
+| `reservoir_pressure`, `bhp` | Static/reservoir pressure and flowing downhole pressure, clearly distinguished | No; useful when available |
+| `bubble_point_pressure`, `initial_reservoir_pressure` | PVT/reservoir context for pressure-depletion features | No; useful when available |
+| `gor`, `water_cut`, `choke` | Derived/operating measurements | No; useful when available |
+| `region`, `reservoir_type` | Documented categorical descriptors | No; do not infer these from a filename or location shortcut |
+| `lift_active`, lift type, shut-in and intervention flags | Operating state through time | Not required by the baseline, but essential for the intended transition study |
+
+The code can create `gor` from gas and oil rates and `water_cut` from water and oil rates when those columns are present and the corresponding derived values are not already supplied. It does not resolve engineering definitions for you. `normalize_columns` requires `well_id`, `date`, and `oil_rate`, parses dates, removes rows with missing dates or oil rate, and sorts the history. We must still inspect duplicate dates, gaps, missingness, rate allocation, and units ourselves. The `UNIT_MAP` in the notebook is a record/checklist; it does **not** perform unit conversion. We must convert incompatible units before combining data.
+
+For the future solution-gas-drive task, we should retain both the raw source file and a cleaned table, document the source and units, and preserve explicit operating/event histories. These are not optional details if we want to tell natural depletion apart from shutdowns, facility limits, well interventions, or lift changes.
+
+## How to run it with our own well data
+
+There is **no upload button or interactive question-and-answer interface yet**. The existing way to use a file is to edit the notebook’s input settings, then run the cells from top to bottom. The first notebook is the general pipeline demonstration; the second is specialized to the Volve workbook.
+
+### 1. Install the project
+
+From a terminal in the repository root:
 
 ```bash
 python -m venv .venv
@@ -109,40 +96,199 @@ pip install -r requirements.txt
 jupyter lab
 ```
 
-Open `notebooks/01_natural_flow_adequacy_baseline.ipynb` for the synthetic software demonstration. Open `notebooks/02_volve_real_field_benchmark.ipynb` for the included real field-data evaluation. For optional Hugging Face models, install `requirements-models.txt` separately; this installs PyTorch/Chronos dependencies and downloads model weights at first inference. For other field data, map source columns, document units, verify cadence, and define the target before fitting.
+Open `notebooks/01_natural_flow_adequacy_baseline.ipynb`. For the optional Chronos model comparison, install `requirements-models.txt` separately and allow the first inference to download the model weights. We recommend starting with the base notebook and your own properly mapped data before installing those optional models.
 
-To run the new decline-curve comparison from the project root:
+### 2. Point the notebook at your file
+
+Keep confidential company data outside this public repository, then set `DATA_PATH` to the file’s actual location. The notebook uses `load_table` for the supported table formats. Replace the demonstration `COLUMN_MAP` with the names in your own file. For example:
+
+```python
+DATA_PATH = "/path/to/our/well_history.xlsx"
+
+COLUMN_MAP = {
+    "Well Name": "well_id",
+    "Production Date": "date",
+    "Oil Rate (stb/d)": "oil_rate",
+    "Gas Rate (mscf/d)": "gas_rate",
+    "Water Rate (bbl/d)": "water_rate",
+    "Flowing BHP (psi)": "bhp",
+}
+
+UNIT_MAP = {
+    "oil_rate": "STB/day",
+    "gas_rate": "Mscf/day",
+    "water_rate": "bbl/day",
+    "bhp": "psi",
+}
+```
+
+These names are examples only; we must substitute the exact source headers and actual units from our file’s data dictionary. Mapping renames columns; it does not convert units. If our file stores year and month instead of a date, we need to construct a valid date column before calling the normalization step. If a data provider uses multiple sheets, the current generic loader reads the default sheet; we need to select the correct sheet explicitly in the notebook.
+
+### 3. Answer the project’s analysis choices
+
+Before training, we need to decide and document:
+
+- Which wells and date range are included, and what one row represents (daily, monthly, test, or another interval).
+- The rate unit and pressure unit for every source column, whether rates are measured or allocated, and how missing observations and duplicate well/date rows should be resolved.
+- The forecast target and horizon—for example, oil rate one month ahead. The current field benchmark evaluates one-month predictions as well as a separate 21-month comparison for one well; those are different tests.
+- If we are demonstrating the threshold label, the minimum acceptable rate in a stated unit and how many consecutive periods below that rate count as inadequate. This is a project-defined rule, not a model-discovered engineering limit.
+- The reservoir type/drive mechanism and region only when they are documented or engineering-reviewed. Unknown values should remain unknown rather than being guessed.
+
+The notebook displays missingness, duplicate well-date checks, data profiles, model scores, prediction tables, and charts. We should review those checks before interpreting a forecast. The held-out-well and forward-time splits in the notebook are for evaluation; they are not a substitute for validating a model on the specific new well or field we plan to use.
+
+### 4. Run the field example or the Arps comparison
+
+The real-field notebook runs on the included Volve data:
+
+```text
+notebooks/02_volve_real_field_benchmark.ipynb
+```
+
+It is a Volve-specific benchmark, not a general file-upload workflow. The standalone comparison script is also tied to the included Volve-format workbook. From the repository root, run:
 
 ```bash
 python scripts/compare_arps_models.py
+```
+
+To run Arps, recursive HGB, persistence, Chronos-2, and Chronos-Bolt-Small together, use:
+
+```bash
 python scripts/compare_arps_models.py --include-hugging-face
 ```
 
-The second command downloads/runs Chronos-2 and Chronos-Bolt-Small if their optional dependencies are installed. The script saves comparison metrics, forecast rows, metadata, and a chart under `reports/arps_comparison/`.
+Optional command-line arguments let us select a Volve-format workbook, well, training fraction, and output folder. This CLI is not a generic predictor for arbitrary uploaded field data; the notebook needs to be adapted to a new source, mapping, target, and unit definition first.
 
-## Understanding the results
-The synthetic CSV has 36 artificial well histories and exists only to verify pipeline behavior. In its original single-step held-out-well and purged time-split evaluations, the tabular model does **not** beat persistence: oil-rate MAE is about 294 versus persistence MAE about 104 in source units for the held-out well; downhole-pressure MAE is about 18.2 versus persistence about 12.3. In the purged future-time split, oil-rate MAE is about 140 versus persistence about 53.0, and pressure MAE about 19.6 versus about 13.5. A separate same-horizon 21-month comparison—including recursive HGB and Arps—is described below. These are preliminary results from one field and selected splits, not general performance estimates.
+## What information we need for an artificial-lift assessment
 
-On a fixed 21-month forecast of 15/9-F-12, Arps selected the exponential form (MAE about 302); recursive HistGradientBoosting was about 207; Chronos-Bolt-Small about 275; and persistence about 389. Chronos-2 was poor (raw MAE about 507; nonnegative-clipped MAE about 388). Despite lower MAE for the first three than persistence in this particular holdout, every model has negative R², and the forecast period includes a shut-in/restart pattern. Arps excludes zero-rate months, so it is not modeling downtime. These preliminary results do not establish useful generalization. See [Arps method and results](docs/arps_method.md), [the executed Volve notebook](notebooks/02_volve_real_field_benchmark.ipynb), and [field results note](docs/volve_field_results.md).
+Our current notebooks do not ask these questions automatically. This is the information we should gather and verify before building that feature:
 
-## Data sources and provenance
+| Question we need answered | Why it matters |
+|---|---|
+| What is the reservoir drive mechanism, and what source or engineering review confirms it? | A title or well name is not evidence of solution-gas drive. Drive mechanism changes the expected pressure and production behavior. |
+| What are the initial/current reservoir pressures, bubble-point pressure, and available PVT/fluid properties? | These help characterize drawdown, gas liberation, fluid behavior, and inflow. Units and measurement dates matter. |
+| What are the dated oil, gas, water, pressure, GOR, water-cut, and choke histories? | Rates alone may not distinguish reservoir decline from changed operation or changing fluid production. |
+| When was the well naturally flowing, shut in, constrained, or on each artificial-lift method? When were workovers and other interventions performed? | These dates establish whether the model is learning depletion, operating choices, or transition outcomes. They are needed to label lift-transition examples. |
+| What rate, drawdown, or economic limit defines “natural flow is inadequate” for this project? How long must the condition persist? | A threshold and decision window must be agreed and labeled; there is no single universal limit. |
+| What is the completion and well geometry, including depth, tubing/casing sizes, deviation, restrictions, and wellhead/facility pressure? | Lift options have different design and operating envelopes. A decline curve cannot substitute for well design data. |
+| Which resources and constraints are available—power, gas for gas lift, injection/flowline capacity, water handling, space, maintenance, safety, and budget? | Technical production potential may not be feasible or economic under the actual field constraints. |
+| For wells that already transitioned, what method was installed, when, why, and what happened to production, uptime, cost, and failures? | We need labeled outcomes and comparison cases to evaluate any future method-ranking model. |
 
-The repository now includes a small Volve production workbook rather than the approximately multi-terabyte full-field archive. It covers daily production history and operating measurements for six producing wellbores. The source license permits sharing with attribution and a link to the terms, subject to a no-sale condition; see [the attribution and license note](docs/volve_data_and_license.md). The Norwegian Offshore Directorate describes the field as produced with water injection for pressure support, so this source is useful field data but does not establish a solution-gas-drive transition label.
+A future lift-assessment workflow should return a **screening result with evidence**, not a bare answer: forecast range, threshold-crossing probability/time only after it is validated, candidate methods that pass documented constraints, reasons for ruling options in or out, assumptions, uncertainty, and a clear “insufficient data / engineering review required” state. We have not built that decision-support step yet. Lift choice should not be inferred from production decline alone.
 
-Optional pretrained model benchmarks are documented in [Hugging Face model notes](docs/huggingface_models.md). Chronos-2 and Chronos-Bolt-Small are general time-series models; model weights download separately and are not stored in the repository.
-The [SPE Data Repository](https://www.spe.org/en/industry/data-repository/) provides rate-transient data intended for research and training; a site login is required and its use stipulates proper citation. Check individual files for documented reservoir drive, variable definitions, units, and lift status. [Equinor Volve](https://www.equinor.com/energy/volve-data-sharing) is a substantial field dataset with production and subsurface data; verify well/reservoir suitability rather than assuming every well is solution-gas drive. The [Mendeley tight/unconventional production collection](https://data.mendeley.com/datasets/5pzzgngw72) includes seven history files but is not a direct solution-gas-drive oil dataset. See `docs/data_provenance.csv`; update it when actual assets are downloaded.
+## What the project returns
 
-## Limitations and responsible use
-The repository now includes one real-field dataset, but no field validation exists for natural-flow inadequacy or solution-gas-drive transitions. The current regressors underperform persistence in the selected Volve holdouts. Public datasets may have incomplete pressure, PVT, drive mechanism, intervention, and economic context. Different sources may use incompatible units, sampling frequencies, allocation methods, and definitions. Observational prediction does not establish that an artificial-lift intervention caused a production change. Model recommendations require engineering and economic review, uncertainty communication, out-of-distribution checks, and local operating approval.
+| Where we run it | What we see or save |
+|---|---|
+| Synthetic baseline notebook | A data-quality check, an example rule-based inadequate-flow label, fixed-horizon oil-rate predictions, held-out-well and time-split regression metrics, tables, and diagnostic charts. Synthetic results are software demonstrations only. |
+| Volve field notebook | Real-data profiles, oil-rate and downhole-pressure regression metrics, held-out-well/time comparisons, prediction tables, Chronos forecasts and intervals when the optional package is available, plus the Arps comparison and chart. |
+| `compare_arps_models.py` | `arps_model_comparison_metrics.csv`, `arps_model_comparison_predictions.csv`, `arps_model_comparison_metadata.json`, and `arps_model_comparison.png` under `reports/arps_comparison/`. |
 
-## Roadmap
-1. Select an operational and economic inadequacy definition with the supervisor.
-2. Obtain and document eligible natural-flow solution-gas-drive well histories, including lift-transition and censoring information; Volve provides a real-field benchmark but not this target.
-3. Obtain and document additional eligible solution-gas-drive well histories if feasible; preserve source citations and operational status.
-4. Calibrate a reservoir simulator to those field wells before using synthetic samples for augmentation.
-5. Add repeated grouped and purged temporal validation with persistence, decline-curve, and Chronos baselines.
-6. Add a censored time-to-event model only after transition/event labels and natural-flow status are verified.
-7. Add scenario/decision analysis only after forecast validation; this repository does not yet choose an artificial-lift method.
+The project reports **MAE and RMSE** in the target’s source units, **R²** as context, forecast rows, and Chronos interval coverage where available. It does not report a universal “accuracy percentage,” calibrated natural-flow inadequacy probability, or recommended lift system.
 
-## Contributors and citation
-Add team names, supervisor, institution, and project citation format before distribution. Cite every third-party dataset according to its own terms. This scaffold is a student research prototype; no operational guarantee is provided.
+Here is the current workflow, including the step we have **not** built yet:
+
+```mermaid
+flowchart LR
+    A[CSV, Excel, Parquet, or JSON] --> B[Load table and map column names]
+    B --> C[Review units, dates, missingness, duplicates]
+    C --> D[Create per-well history features]
+    D --> E[HGB, Arps, persistence, optional Chronos]
+    E --> F[Forecast tables, metrics, and charts]
+    F -. requires verified labels and engineering data .-> G[Inadequacy risk and lift screening\nnot built yet]
+```
+
+## What the current field results tell us
+
+We included the Volve workbook to test the pipeline on real observations, not to claim that it represents our target reservoir type. The subset has 9,143 daily producer records across six wellbores. Volve was developed with water injection for pressure support; the workbook does not provide verified natural-flow/artificial-lift status or a transition event.
+
+The table below is one fixed 21-month forecast for one Volve well, 15/9-F-12. Its long test period includes a zero-rate month, a restart, and later low/zero production. Every model’s R² is negative on this selected horizon. The numbers are evidence about this test only—not expected accuracy on our wells.
+
+| Model on the same 21-month holdout | MAE | RMSE | R² |
+|---|---:|---:|---:|
+| Arps exponential (selected using training-only AICc) | 301.68 | 355.72 | -1.51 |
+| Recursive HistGradientBoosting | 207.11 | 261.55 | -0.35 |
+| Chronos-Bolt-Small median | 275.04 | 343.65 | -1.34 |
+| Chronos-2 raw median | 507.10 | 526.06 | -4.48 |
+| Chronos-2 median clipped at zero | 387.52 | 446.67 | -2.95 |
+| Persistence | 388.97 | 449.20 | -3.00 |
+
+Recursive HGB had the lowest MAE in this one comparison, followed by Chronos-Bolt and Arps. Chronos intervals were also under-calibrated on this holdout: the nominal 80% Chronos-Bolt interval covered 66.7% of values, while Chronos-2 covered 19.0%. We do not treat any of these results as field-ready performance.
+
+The earlier one-step Volve benchmarks tell a related but separate story: HGB’s oil-rate MAE was 293.67 versus 104.35 for persistence on a held-out well, and 140.27 versus 52.99 on a purged later-time split. HGB pressure MAE also exceeded persistence on those selected splits. Read the full split definitions and limitations in [`docs/volve_field_results.md`](docs/volve_field_results.md).
+
+## Project files
+
+```text
+.
+├── README.md
+├── configs/project.yaml
+├── data/
+│   ├── synthetic/demo_well_monthly.csv
+│   ├── raw/volve/Volve production data.xlsx
+│   └── processed/volve_daily_producers.csv
+├── docs/
+│   ├── arps_method.md
+│   ├── volve_data_and_license.md
+│   ├── volve_field_results.md
+│   ├── huggingface_models.md
+│   ├── canonical_schema.csv
+│   └── data_provenance.csv
+├── notebooks/
+│   ├── 01_natural_flow_adequacy_baseline.ipynb
+│   └── 02_volve_real_field_benchmark.ipynb
+├── scripts/compare_arps_models.py
+├── reports/arps_comparison/
+│   ├── arps_model_comparison_metrics.csv
+│   ├── arps_model_comparison_predictions.csv
+│   ├── arps_model_comparison_metadata.json
+│   └── arps_model_comparison.png
+├── src/sgd_ml/
+│   ├── io.py
+│   ├── features.py
+│   ├── labels.py
+│   ├── modeling.py
+│   ├── volve.py
+│   ├── arps.py
+│   └── arps_comparison.py
+├── requirements.txt
+├── requirements-models.txt
+└── tests/
+```
+
+## What is not built yet
+
+- We do not have a field-validated classifier or time-to-event model for natural-flow inadequacy.
+- We do not have a confirmed set of solution-gas-drive wells with dated natural-flow-to-lift transitions and censored histories.
+- We do not have a GUI, browser upload, or interactive assistant that asks for a file, checks all engineering context, and returns a lift recommendation. The current data workflow is through notebooks and the Volve-specific comparison script.
+- We do not rank ESP, gas lift, rod pump, PCP, hydraulic lift, or other systems. No such model has been trained or tested here.
+- We do not automatically convert units, interpret arbitrary vendor headers, verify duplicate rows/cadence, identify a drive mechanism, or infer lift status from production data.
+- Chronos models are optional generic forecasts; their weights are downloaded when used and are not stored in this repository.
+
+These gaps matter because a numerical forecast is not a lift design. To build the intended recommendation carefully, we first need representative, well-documented field histories with actual transition outcomes and enough engineering/facility/economic inputs to compare methods.
+
+## Data sources, licensing, and privacy
+
+The repository includes a small Volve workbook and a derived producer panel. We retain the original source workbook and cite Equinor’s Volve terms in [`docs/volve_data_and_license.md`](docs/volve_data_and_license.md); redistribution requires attribution and the source license prohibits sale. The Norwegian Offshore Directorate’s field context explains why Volve should not be described as a direct solution-gas-drive natural-flow-transition dataset.
+
+Other identified sources are not included as field transition examples merely because they contain production data. Some require login, have limited variables, focus on another reservoir type, or lack the drive-mechanism and lift labels our question requires. The data-provenance table records these limits.
+
+This is a public repository. **Do not place confidential company data here or commit it to GitHub.** Keep private data in an approved local or controlled workspace, point `DATA_PATH` to that file, and share only non-sensitive results. Check the license and attribution requirements for every external dataset before copying it into a public repository.
+
+## Our next steps
+
+1. Agree on a measurable definition of inadequate natural flow, including rate units, duration, and decision horizon.
+2. Obtain field histories with verified solution-gas-drive classification, natural-flow/lift status over time, transition dates, interventions, and end-of-observation/censoring information.
+3. Add a robust data-intake and validation layer that produces a mapping/unit/missingness report before modeling; keep source-specific adapters separate from the canonical format.
+4. Benchmark simple engineering and statistical baselines on repeated well-held-out and time-held-out datasets. Report uncertainty and calibration, not just point errors.
+5. Build and validate time-to-inadequacy estimates only after event labels are adequate.
+6. Add a separate engineering feasibility and economics workflow for lift screening, with explicit constraints, traceable reasons, uncertainty, and engineer review. Do not label that output an automated recommendation until it has been evaluated against real outcomes.
+
+## References and contribution notes
+
+- [Equinor Volve Data Sharing](https://www.equinor.com/energy/volve-data-sharing)
+- [Norwegian Offshore Directorate field summary for Volve](https://www.norskpetroleum.no/en/facts/field/volve/)
+- [Amazon Chronos-2 model card](https://huggingface.co/amazon/chronos-2)
+- [Amazon Chronos-Bolt-Small model card](https://huggingface.co/amazon/chronos-bolt-small)
+- [SPE Data Repository](https://www.spe.org/en/industry/data-repository/)
+
+We welcome contributions that improve unit handling, add documented field datasets with suitable rights, test additional engineering baselines, and strengthen validation. Please keep raw-data provenance and the limits of every result visible when adding a new source or model.
