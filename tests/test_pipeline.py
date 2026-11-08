@@ -27,3 +27,32 @@ def test_volve_field_dataset_ingestion():
     assert "oil_rate_future_1m" in targets
     assert "bhp_future_1m" in targets
     assert targets.development_context.str.contains("water-injection").all()
+
+
+def test_arps_exponential_fit_recovers_decline_curve():
+    import numpy as np
+    from sgd_ml.arps import fit_arps
+    elapsed_months = np.arange(48, dtype=float)
+    observed_rates = 500.0 * np.exp(-0.035 * elapsed_months)
+    fitted = fit_arps(elapsed_months, observed_rates, decline_type="exponential")
+    assert fitted.decline_type == "exponential"
+    assert abs(fitted.qi - 500.0) < 0.1
+    assert abs(fitted.di - 0.035) < 1e-5
+    np.testing.assert_allclose(fitted.predict(elapsed_months), observed_rates, rtol=1e-5)
+
+
+def test_arps_comparison_uses_one_shared_real_field_holdout(tmp_path):
+    from sgd_ml.arps_comparison import run_arps_comparison
+    result = run_arps_comparison(
+        workbook_path=ROOT / "data/raw/volve/Volve production data.xlsx",
+        include_huggingface=False,
+        output_dir=tmp_path,
+    )
+    predictions = result["predictions"]
+    metrics = result["metrics"]
+    assert len(predictions) == 21
+    assert {"arps_prediction", "hgb_recursive_prediction", "persistence_prediction"}.issubset(predictions.columns)
+    assert set(metrics.model) == {"Arps Exponential", "HistGradientBoosting recursive", "Persistence"}
+    assert metrics.MAE.notna().all()
+    assert result["metadata"]["natural_flow_status"] == "unknown in Volve workbook"
+    assert (tmp_path / "arps_model_comparison_metrics.csv").exists()

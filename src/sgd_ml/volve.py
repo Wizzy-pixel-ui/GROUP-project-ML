@@ -51,9 +51,10 @@ def add_monthly_forecast_targets(monthly, horizons=(1, 3)):
     """Joining future monthly oil and downhole-pressure targets by calendar month."""
     out = monthly.copy()
     out["date"] = pd.to_datetime(out["date"])
+    available_targets = [column for column in ["oil_rate", "bhp"] if column in out]
     for horizon in horizons:
-        future = out[["well_id", "date", "oil_rate", "bhp"]].copy()
+        future = out[["well_id", "date", *available_targets]].copy()
         future["date"] = future["date"] - pd.DateOffset(months=horizon)
-        future = future.rename(columns={"oil_rate": f"oil_rate_future_{horizon}m", "bhp": f"bhp_future_{horizon}m"})
+        future = future.rename(columns={column: f"{column}_future_{horizon}m" for column in available_targets})
         out = out.merge(future, on=["well_id", "date"], how="left", validate="one_to_one")
     return out

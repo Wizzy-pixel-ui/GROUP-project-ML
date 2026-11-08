@@ -6,6 +6,11 @@ __pycache__/
 .env
 reports/*
 !reports/.gitkeep
+!reports/arps_comparison/
+reports/arps_comparison/*
+!reports/arps_comparison/*.csv
+!reports/arps_comparison/*.json
+!reports/arps_comparison/*.png
 data/raw/*
 !data/raw/.gitkeep
 !data/raw/volve/

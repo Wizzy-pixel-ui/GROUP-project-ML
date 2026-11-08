@@ -36,6 +36,7 @@ A real field dataset is now included: the Equinor Volve production workbook and 
 | Per-well history features | Implemented | Lag, rolling mean, slope, elapsed time, pressure/bubble-point relation |
 | Natural-flow inadequate event label | Synthetic example only | Configurable threshold logic is not validated against field transition records |
 | Fixed-horizon oil-rate regression | Implemented | HistGradientBoostingRegressor baseline |
+| Arps decline curves | Implemented | Exponential, harmonic, and hyperbolic candidates; AICc selection on training history |
 | Held-out-well evaluation | Implemented | Prevents rows from the same well leaking across split |
 | Dashboard-style metric/prediction tables and charts | Implemented in notebook | No GUI; exports CSV reports and renders plots inline |
 | Downhole-pressure forecasts | Implemented in Volve benchmark | Single-field test only; HGB is worse than persistence in current holdouts |
@@ -66,14 +67,16 @@ A real field dataset is now included: the Equinor Volve production workbook and 
 │   ├── volve_data_and_license.md
 │   ├── huggingface_models.md
 │   ├── volve_field_results.md
+│   ├── arps_method.md
 │   ├── canonical_schema.csv
 │   ├── data_provenance.csv
 │   ├── model_card.md
 │   └── workflow.mmd
 ├── notebooks/01_natural_flow_adequacy_baseline.ipynb
 ├── notebooks/02_volve_real_field_benchmark.ipynb
-├── reports/                 # Generated outputs (not committed by default)
-├── src/sgd_ml/              # Reusable Python functions, including optional HF adapters
+├── scripts/compare_arps_models.py
+├── reports/arps_comparison/ # Reproducible reference metrics, forecasts, metadata, and chart
+├── src/sgd_ml/              # Reusable Python functions, including arps.py and comparison utilities
 └── tests/
 ```
 
@@ -90,7 +93,7 @@ Geographical features should start with generalized basin/region or geological s
 ## Algorithms and rationale
 The first model is a scikit-learn `HistGradientBoostingRegressor` with imputation and categorical encoding. It is selected as a practical nonlinear tabular baseline for mixed well descriptors and history features. It is not asserted to be the best model for every dataset.
 
-The evaluation plan includes persistence (future rate equals current/recent rate), decline-curve analysis, regularized regression or GAMs, and alternative tree ensembles. A survival model or discrete-time event hazard model is suitable for time-to-inadequacy once events and censored histories are consistently defined. Sequential neural networks are not a default: they need enough long, consistent histories and must outperform simpler baselines on well-held-out and forward-time tests.
+The evaluation compares persistence (future rate equals the latest observed rate), a recursive HistGradientBoosting model, Arps decline curves, and optional Chronos time-series models. The Arps fitter evaluates exponential, harmonic, and hyperbolic forms and selects using AICc on training-only positive-rate history. A survival model or discrete-time event hazard model is suitable for time-to-inadequacy once events and censored histories are consistently defined. Sequential neural networks are not a default: they need enough long, consistent histories and must outperform simpler baselines on well-held-out and forward-time tests.
 
 ## Validation and metrics
 The primary split holds out entire wells to test generalization to new wells. A separate forward-time split is needed to evaluate forecasts for previously observed wells. Hyperparameter selection happens inside training data only. Report MAE and RMSE in target units, R-squared as secondary context, sample/well counts, baselines, and uncertainty. Regression does not have a universal meaningful “accuracy percentage.” For event prediction, use time-to-event error, discrimination, calibration, and prediction-window coverage. Review errors by reservoir type, region, operating regime, and data completeness.
@@ -108,10 +111,19 @@ jupyter lab
 
 Open `notebooks/01_natural_flow_adequacy_baseline.ipynb` for the synthetic software demonstration. Open `notebooks/02_volve_real_field_benchmark.ipynb` for the included real field-data evaluation. For optional Hugging Face models, install `requirements-models.txt` separately; this installs PyTorch/Chronos dependencies and downloads model weights at first inference. For other field data, map source columns, document units, verify cadence, and define the target before fitting.
 
-## Understanding the results
-The synthetic CSV has 36 artificial well histories and exists only to verify pipeline behavior. Notebook 02 uses real Volve observations and currently shows that the tabular model does **not** beat persistence in the selected holdouts. For the one held-out well split, oil-rate MAE is about 294 versus persistence MAE about 104 in source units; downhole-pressure MAE is about 18.2 versus persistence about 12.3. In the purged future-time split, oil-rate MAE is about 140 versus persistence about 53.0, and pressure MAE about 19.6 versus persistence about 13.5. These are preliminary results from one field and one split configuration, not general performance estimates.
+To run the new decline-curve comparison from the project root:
 
-On the same 15/9-F-12 holdout, Chronos-Bolt-Small produced a 275 MAE versus persistence at about 389, while Chronos-2 was poor (raw MAE about 507; nonnegative-clipped MAE about 388). Chronos-Bolt had negative R² and 66.7% coverage for its nominal 80% interval; Chronos-2 had about 19% interval coverage and negative raw rates for about 90% of the horizon. This is a one-well long-horizon result, not evidence of reliable generalization. Do not treat these models as accepted predictors. Details and cell outputs are in [the Volve benchmark notebook](notebooks/02_volve_real_field_benchmark.ipynb) and [results note](docs/volve_field_results.md).
+```bash
+python scripts/compare_arps_models.py
+python scripts/compare_arps_models.py --include-hugging-face
+```
+
+The second command downloads/runs Chronos-2 and Chronos-Bolt-Small if their optional dependencies are installed. The script saves comparison metrics, forecast rows, metadata, and a chart under `reports/arps_comparison/`.
+
+## Understanding the results
+The synthetic CSV has 36 artificial well histories and exists only to verify pipeline behavior. In its original single-step held-out-well and purged time-split evaluations, the tabular model does **not** beat persistence: oil-rate MAE is about 294 versus persistence MAE about 104 in source units for the held-out well; downhole-pressure MAE is about 18.2 versus persistence about 12.3. In the purged future-time split, oil-rate MAE is about 140 versus persistence about 53.0, and pressure MAE about 19.6 versus about 13.5. A separate same-horizon 21-month comparison—including recursive HGB and Arps—is described below. These are preliminary results from one field and selected splits, not general performance estimates.
+
+On a fixed 21-month forecast of 15/9-F-12, Arps selected the exponential form (MAE about 302); recursive HistGradientBoosting was about 207; Chronos-Bolt-Small about 275; and persistence about 389. Chronos-2 was poor (raw MAE about 507; nonnegative-clipped MAE about 388). Despite lower MAE for the first three than persistence in this particular holdout, every model has negative R², and the forecast period includes a shut-in/restart pattern. Arps excludes zero-rate months, so it is not modeling downtime. These preliminary results do not establish useful generalization. See [Arps method and results](docs/arps_method.md), [the executed Volve notebook](notebooks/02_volve_real_field_benchmark.ipynb), and [field results note](docs/volve_field_results.md).
 
 ## Data sources and provenance
 

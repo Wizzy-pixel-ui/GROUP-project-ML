@@ -1,0 +1,19 @@
+[
+  {
+    "forecast_well":"15\/9-F-12",
+    "context_months":83,
+    "test_months":21,
+    "context_start":"2008-02-01",
+    "context_end":"2014-12-01",
+    "test_start":"2015-01-01",
+    "test_end":"2016-09-01",
+    "hgb_training_rows":118,
+    "hgb_training_wells":4,
+    "natural_flow_status":"unknown in Volve workbook",
+    "field_context":"water injection pressure support; not solution-gas-drive transition validation",
+    "huggingface_models":[
+      "amazon\/chronos-2",
+      "amazon\/chronos-bolt-small"
+    ]
+  }
+]
