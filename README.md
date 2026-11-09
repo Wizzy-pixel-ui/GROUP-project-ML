@@ -2,7 +2,7 @@
 
 We are building a machine-learning workflow to study when a well’s natural flow may no longer meet an agreed production requirement. Our longer-term goal is to use production and reservoir history to help engineers assess artificial-lift timing and compare feasible lift options.
 
-We want to be clear about what we have today: this repository is a research prototype. It can load and analyze tabular well data through Python notebooks, forecast selected production and pressure targets, and compare several models. It does **not** yet identify a validated natural-flow transition, ask questions through an interactive app, or recommend an artificial-lift method. We explain below what we have built, how to run it with data, and what must be added before we can answer the lift-selection question responsibly.
+We want to be clear about what we have today: this repository is a research prototype. It can load and analyze tabular well data through Python notebooks and a FastAPI backend, forecast selected production and pressure targets, and compare several models. It does **not** yet identify a validated natural-flow transition, provide a dashboard or interactive question flow, or recommend an artificial-lift method. We explain below what we have built, how to run it with data, and what must be added before we can answer the lift-selection question responsibly.
 
 ## Contents
 
@@ -11,14 +11,15 @@ We want to be clear about what we have today: this repository is a research prot
 3. [Algorithms we use and why](#algorithms-we-use-and-why)
 4. [What data the code accepts](#what-data-the-code-accepts)
 5. [How to run it with our own well data](#how-to-run-it-with-our-own-well-data)
-6. [What information we need for an artificial-lift assessment](#what-information-we-need-for-an-artificial-lift-assessment)
-7. [What the project returns](#what-the-project-returns)
-8. [What the current field results tell us](#what-the-current-field-results-tell-us)
-9. [Project files](#project-files)
-10. [What is not built yet](#what-is-not-built-yet)
-11. [Data sources, licensing, and privacy](#data-sources-licensing-and-privacy)
-12. [Our next steps](#our-next-steps)
-13. [References and contribution notes](#references-and-contribution-notes)
+6. [FastAPI for a dashboard](#fastapi-for-a-dashboard)
+7. [What information we need for an artificial-lift assessment](#what-information-we-need-for-an-artificial-lift-assessment)
+8. [What the project returns](#what-the-project-returns)
+9. [What the current field results tell us](#what-the-current-field-results-tell-us)
+10. [Project files](#project-files)
+11. [What is not built yet](#what-is-not-built-yet)
+12. [Data sources, licensing, and privacy](#data-sources-licensing-and-privacy)
+13. [Our next steps](#our-next-steps)
+14. [References and contribution notes](#references-and-contribution-notes)
 
 ## What we are trying to answer
 
@@ -38,6 +39,7 @@ The code we have now is the foundation for that work: tabular loading, column ma
 | 4. Real field benchmark | Equinor Volve daily production data for six producer wellbores, converted to a documented monthly panel; oil-rate and downhole-pressure forecasts | We needed a real-data test to reveal issues that synthetic data cannot show, including missing measurements and operational changes. | This is genuine field data, but it does not verify natural-flow/lift status or solution-gas-drive transition events. Volve used water-injection pressure support. |
 | 5. Pretrained time-series comparison | Optional zero-shot Amazon Chronos-2 and Chronos-Bolt-Small forecasts | We wanted to see whether general pretrained time-series models offered a useful comparison without training their weights on this small field subset. | They are general-purpose models, not petroleum models. Their performance on one Volve well is not evidence of broad transfer. |
 | 6. Arps decline comparison | Exponential, harmonic, and hyperbolic Arps curves, selected by AICc using the training history only | Arps is a familiar engineering decline baseline. It lets us compare a fitted decline trend with the data-driven and pretrained forecasts. | It models positive producing-rate decline. It does not model shut-ins, restarts, lift transitions, pressure support, or a recommended lift method. |
+| 7. FastAPI backend | JSON and file-upload routes for Arps analysis; optional HGB training on a supplied multiwell dataset; chart-ready response data | We wanted a stable interface an interactive dashboard can call without embedding model code in the browser. | It is an API, not a dashboard. HGB models live in server memory, and no route recommends artificial lift. |
 
 We keep the synthetic and real-field experiments separate. We do not combine their scores into one accuracy number.
 
@@ -61,7 +63,7 @@ In the synthetic notebook, `NATURAL_FLOW_THRESHOLD = 10.0` source-rate units, `C
 
 ## What data the code accepts
 
-The general table loader in `src/sgd_ml/io.py` reads **CSV, XLSX, XLS, Parquet, and JSON** files. It reads a table; it does not infer arbitrary file formats, recognize every vendor schema, or decide what a column means. Scanned PDFs, images, and unsupported formats must first be converted into a structured table.
+The general table loader and FastAPI upload routes read **CSV, XLSX, XLS, Parquet, and JSON** files. The API reads a table; it does not infer arbitrary file formats, recognize every vendor schema, or decide what a column means. Scanned PDFs, images, and unsupported formats must first be converted into a structured table.
 
 The generic baseline requires at least one row per well and date with these three canonical columns:
 
@@ -83,7 +85,7 @@ For the future solution-gas-drive task, we should retain both the raw source fil
 
 ## How to run it with our own well data
 
-There is **no upload button or interactive question-and-answer interface yet**. The existing way to use a file is to edit the notebook’s input settings, then run the cells from top to bottom. The first notebook is the general pipeline demonstration; the second is specialized to the Volve workbook.
+There is no dashboard or interactive question-and-answer interface yet. In the notebook workflow, point `DATA_PATH` at your file and run the cells from top to bottom. The FastAPI backend also provides a file-upload endpoint for dashboard clients; see [FastAPI for a dashboard](#fastapi-for-a-dashboard) and the [API guide](docs/api_guide.md). The first notebook is the general pipeline demonstration; the second is specialized to the Volve workbook.
 
 ### 1. Install the project
 
@@ -158,9 +160,35 @@ python scripts/compare_arps_models.py --include-hugging-face
 
 Optional command-line arguments let us select a Volve-format workbook, well, training fraction, and output folder. This CLI is not a generic predictor for arbitrary uploaded field data; the notebook needs to be adapted to a new source, mapping, target, and unit definition first.
 
+## FastAPI for a dashboard
+
+The backend package is installable from the repository and exposes local REST endpoints. From the repository root:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+sgd-api
+```
+
+By default, the server listens only on `127.0.0.1:8000`. Open [`http://127.0.0.1:8000/docs`](http://127.0.0.1:8000/docs) for Swagger and [`docs/api_guide.md`](docs/api_guide.md) for request and response examples. The package can also be installed with `pip install "git+https://github.com/Wizzy-pixel-ui/GROUP-project-ML.git"`; it has **not** been released to PyPI.
+
+| Endpoint | What it does |
+|---|---|
+| `GET /health`, `GET /v1/capabilities` | Check service status and list available features. |
+| `POST /v1/analyze` or `POST /v1/analyze/upload` | Submit one or more well histories as JSON or a supported tabular file. Returns history, an Arps and persistence curve, rate-trend summaries, and an observed threshold check. |
+| `POST /v1/models/train` or `POST /v1/models/train/upload` | Train the current HistGradientBoosting model from a multiwell training set and return a single held-out-well validation summary. Requires at least four wells after exclusions. |
+| `GET /v1/models/{model_id}` | Retrieve metadata for an HGB model still held in this API process. |
+
+Pass `model_id` to `/v1/analyze` to include a fixed-horizon HGB prediction. Exclude the target well from training when testing generalization to an unseen well. `horizon_steps` counts rows, not calendar months, so it equals months only for complete monthly histories. HGB artifacts are currently in memory; they disappear on restart and are not shared between multiple worker processes.
+
+Analysis responses contain arrays the frontend can plot directly. The API currently returns `three_d_available: false`: 3D well/reservoir animation needs well-survey coordinates, completion trajectory, and reservoir surfaces, none of which are included in our current inputs. The API also returns `artificial_lift.status = "not_implemented"` and `recommendation = null`; it does not recommend a lift method.
+
+This backend has no authentication and is intended for local development. Do not expose it to the public internet or submit confidential data until authentication, HTTPS, access controls, request limits, privacy safeguards, and persistent model storage have been added. Project code is licensed under MIT; see [`LICENSE`](LICENSE). That license does not replace or change the separate terms for Volve data.
+
 ## What information we need for an artificial-lift assessment
 
-Our current notebooks do not ask these questions automatically. This is the information we should gather and verify before building that feature:
+Our notebooks and API do not ask these questions automatically. This is the information we should gather and verify before building a lift-screening feature:
 
 | Question we need answered | Why it matters |
 |---|---|
@@ -182,6 +210,7 @@ A future lift-assessment workflow should return a **screening result with eviden
 | Synthetic baseline notebook | A data-quality check, an example rule-based inadequate-flow label, fixed-horizon oil-rate predictions, held-out-well and time-split regression metrics, tables, and diagnostic charts. Synthetic results are software demonstrations only. |
 | Volve field notebook | Real-data profiles, oil-rate and downhole-pressure regression metrics, held-out-well/time comparisons, prediction tables, Chronos forecasts and intervals when the optional package is available, plus the Arps comparison and chart. |
 | `compare_arps_models.py` | `arps_model_comparison_metrics.csv`, `arps_model_comparison_predictions.csv`, `arps_model_comparison_metadata.json`, and `arps_model_comparison.png` under `reports/arps_comparison/`. |
+| FastAPI backend | JSON/file-upload analysis, chart-ready history and forecast arrays, optional HGB predictions, a transparent threshold check, and an explicit no-lift-recommendation status. |
 
 The project reports **MAE and RMSE** in the target’s source units, **R²** as context, forecast rows, and Chronos interval coverage where available. It does not report a universal “accuracy percentage,” calibrated natural-flow inadequacy probability, or recommended lift system.
 
@@ -221,6 +250,8 @@ The earlier one-step Volve benchmarks tell a related but separate story: HGB’s
 ```text
 .
 ├── README.md
+├── LICENSE
+├── pyproject.toml
 ├── configs/project.yaml
 ├── data/
 │   ├── synthetic/demo_well_monthly.csv
@@ -228,6 +259,8 @@ The earlier one-step Volve benchmarks tell a related but separate story: HGB’s
 │   └── processed/volve_daily_producers.csv
 ├── docs/
 │   ├── arps_method.md
+│   ├── api_guide.md
+│   ├── dashboard_generation_prompt.md
 │   ├── volve_data_and_license.md
 │   ├── volve_field_results.md
 │   ├── huggingface_models.md
@@ -250,25 +283,26 @@ The earlier one-step Volve benchmarks tell a related but separate story: HGB’s
 │   ├── volve.py
 │   ├── arps.py
 │   └── arps_comparison.py
+├── src/sgd_api/             # FastAPI routes, schemas, analysis, and HGB model registry
 ├── requirements.txt
 ├── requirements-models.txt
-└── tests/
+└── tests/                   # Includes API and modeling tests
 ```
 
 ## What is not built yet
 
 - We do not have a field-validated classifier or time-to-event model for natural-flow inadequacy.
 - We do not have a confirmed set of solution-gas-drive wells with dated natural-flow-to-lift transitions and censored histories.
-- We do not have a GUI, browser upload, or interactive assistant that asks for a file, checks all engineering context, and returns a lift recommendation. The current data workflow is through notebooks and the Volve-specific comparison script.
+- We do not have a dashboard or interactive assistant that asks engineering questions and returns a lift recommendation. The API has file-upload endpoints, but it is a backend service—not a GUI or engineering questionnaire.
 - We do not rank ESP, gas lift, rod pump, PCP, hydraulic lift, or other systems. No such model has been trained or tested here.
-- We do not automatically convert units, interpret arbitrary vendor headers, verify duplicate rows/cadence, identify a drive mechanism, or infer lift status from production data.
+- We do not automatically convert units, infer arbitrary vendor headers, verify regular cadence, identify a drive mechanism, or infer lift status. The API rejects duplicate well/date rows; it does not resolve or aggregate them for us.
 - Chronos models are optional generic forecasts; their weights are downloaded when used and are not stored in this repository.
 
 These gaps matter because a numerical forecast is not a lift design. To build the intended recommendation carefully, we first need representative, well-documented field histories with actual transition outcomes and enough engineering/facility/economic inputs to compare methods.
 
 ## Data sources, licensing, and privacy
 
-The repository includes a small Volve workbook and a derived producer panel. We retain the original source workbook and cite Equinor’s Volve terms in [`docs/volve_data_and_license.md`](docs/volve_data_and_license.md); redistribution requires attribution and the source license prohibits sale. The Norwegian Offshore Directorate’s field context explains why Volve should not be described as a direct solution-gas-drive natural-flow-transition dataset.
+The project code is licensed under MIT (see [`LICENSE`](LICENSE)). This code license does **not** apply to third-party data. The repository includes a small Volve workbook and a derived producer panel. We retain the original source workbook and cite Equinor’s Volve terms in [`docs/volve_data_and_license.md`](docs/volve_data_and_license.md); redistribution requires attribution and the source license prohibits sale. The Norwegian Offshore Directorate’s field context explains why Volve should not be described as a direct solution-gas-drive natural-flow-transition dataset.
 
 Other identified sources are not included as field transition examples merely because they contain production data. Some require login, have limited variables, focus on another reservoir type, or lack the drive-mechanism and lift labels our question requires. The data-provenance table records these limits.
 
