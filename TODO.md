@@ -9,6 +9,7 @@ This tracker preserves the approved plan's user-facing outcomes and concrete req
 - [x] Use the approved industrial analytics style: deep navy/charcoal surfaces, cyan/blue highlights, readable typography, and state labels. The current overview distinguishes empty data, live API capability, and unavailable engineering functions.
 - [x] Add keyboard-accessible navigation, responsive sidebar controls, page headings/breadcrumb context, and reusable API status refresh.
 - [x] Keep implementation separated into routes, layout, pages, API services, types, settings, and tests. Include app metadata and `frontend/public/manus-routes.json`.
+- [x] Bind frontend dev/preview servers to loopback by default; document a deliberate trusted-LAN opt-in rather than exposing the prototype by default.
 - [ ] Complete visual review at desktop/mobile widths and verify every navigation/control at runtime. Avoid marking UI polish complete until those checks pass.
 - [x] Honor reduced-motion settings and avoid simulated live values or ambient animation.
 
@@ -59,16 +60,17 @@ This tracker preserves the approved plan's user-facing outcomes and concrete req
 ## 7. Local integration, documentation and release readiness — open
 
 - [x] Document local frontend setup and its separate connection to FastAPI in `frontend/README.md`; add an example API URL configuration and no browser secrets.
-- [ ] Document exact frontend/backend install, run/stop, test and integration commands in repository-level docs.
-- [ ] Preserve Python backend behavior. Add versioned API contracts only for capabilities that are implemented and tested.
-- [ ] Keep dependency lockfiles, Node/package-manager pin, route manifest, and example environment files current.
-- [ ] Add tests for every new client/UI/API behavior and run existing backend tests; perform a read-only implementation review against this tracker.
-- [ ] Do not publicly deploy the current unauthenticated API or dashboard until auth, access control, HTTPS, user isolation, protected storage, rate/resource limits, privacy-safe logging and model/file lifecycle are implemented.
-- [ ] Publish changes to the existing public repository only after checking the exact diff and verifying the authorized publishing path. No deployment is claimed in this increment.
+- [x] Document exact frontend/backend install, run, test and integration commands in the root and frontend READMEs.
+- [x] Preserve the existing Python API contract; this increment adds no backend endpoints or schemas.
+- [x] Keep dependency lockfiles, Node/package-manager pin, route manifest, and example environment files current.
+- [x] Add tests for this increment, run the existing backend tests, and perform a read-only implementation review; fix the review's loopback-binding issue.
+- [x] Do not deploy the unauthenticated API or dashboard publicly in this increment; public deployment remains gated on auth, access control, HTTPS, user isolation, protected storage, rate/resource limits, privacy-safe logging and model/file lifecycle.
+- [x] Check the exact diff and push this increment to the existing authorized public repository. No deployment is claimed in this increment.
 
 ## Current progress
 
 - Repository assessment is in `docs/technical_assessment.md`; lift methodology is in `docs/artificial_lift_selection_methodology.md`; the approved phased plan is in `plan.md`.
-- First frontend increment adds the responsive routed shell, live health/capability checks, session-only API origin settings, empty/unavailable states and a status page for every requested area.
+- First frontend increment adds the responsive routed shell, live health/capability checks, session-only API origin settings, empty/unavailable states and a status page for every requested area. A read-only review caught the wildcard Vite binding; it was removed, and runtime verification confirmed the server now binds only to `127.0.0.1` by default.
 - Frontend typecheck, 6 UI/API-origin tests, and production build pass; the existing Python suite passes (9 tests). Live local checks confirmed `/health`, `/v1/capabilities`, CORS for the Vite origin, and HTTP 200 for all 12 declared routes. Desktop visual review is complete; mobile visual review remains open.
+- The tested increment and loopback safety fix are on the existing public repository's `main`; no public deployment is claimed. Temporary preview/test servers were stopped.
 - Next: build the upload, column-mapping, validation and analysis workflow using the actual `/v1/analyze/upload` contract, without claiming that lift recommendations or 3D are already available.

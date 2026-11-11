@@ -27,9 +27,9 @@ pnpm install
 pnpm dev
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:5173`. Local development origins on port 5173 are already included in the API's CORS defaults. If the API runs elsewhere, set `VITE_SGD_API_BASE_URL` in `frontend/.env.local`, or change the API origin in the app's Settings page for the current browser session. Never place credentials or secrets in a `VITE_*` variable.
+Open the local URL printed by Vite, normally `http://127.0.0.1:5173`. The dev and preview scripts bind to loopback by default. Local development origins on port 5173 are already included in the API's CORS defaults. If the API runs elsewhere, set `VITE_SGD_API_BASE_URL` in `frontend/.env.local`, or change the API origin in the app's Settings page for the current browser session. Never place credentials or secrets in a `VITE_*` variable.
 
-For a phone or another computer on a network, `127.0.0.1` refers to that device, not the development host. Use a trusted network interface address only after reviewing firewall, CORS and API-access controls. This prototype has no authentication; do not open it to the public internet.
+For a phone or another computer on a trusted network, `127.0.0.1` refers to that device, not the development host. An intentional LAN-only test can use `pnpm dev -- --host 0.0.0.0`, but only after reviewing firewall, CORS and API-access controls; the API must also be configured deliberately. This prototype has no authentication; do not open it to the public internet or use the LAN override on an untrusted network.
 
 ## Checks
 
