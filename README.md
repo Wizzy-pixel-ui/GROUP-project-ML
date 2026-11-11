@@ -2,7 +2,7 @@
 
 We are building a machine-learning workflow to study when a well’s natural flow may no longer meet an agreed production requirement. Our longer-term goal is to use production and reservoir history to help engineers assess artificial-lift timing and compare feasible lift options.
 
-We want to be clear about what we have today: this repository is a research prototype. It can load and analyze tabular well data through Python notebooks and a FastAPI backend, forecast selected production and pressure targets, and compare several models. It does **not** yet identify a validated natural-flow transition, provide a dashboard or interactive question flow, or recommend an artificial-lift method. We explain below what we have built, how to run it with data, and what must be added before we can answer the lift-selection question responsibly.
+We want to be clear about what we have today: this repository is a research prototype. It can load and analyze tabular well data through Python notebooks and a FastAPI backend, forecast selected production and pressure targets, and compare several models. We have started the web interface with a routed dashboard shell, API health/capability checks, and session-only API settings. The upload workflow, analysis charts, ML forms, and engineering calculations are still being built. The project does **not** yet identify a validated natural-flow transition or recommend an artificial-lift method. We explain below what is ready, what is still in progress, and what evidence we need before answering lift-selection questions responsibly.
 
 ## Contents
 
@@ -40,6 +40,7 @@ The code we have now is the foundation for that work: tabular loading, column ma
 | 5. Pretrained time-series comparison | Optional zero-shot Amazon Chronos-2 and Chronos-Bolt-Small forecasts | We wanted to see whether general pretrained time-series models offered a useful comparison without training their weights on this small field subset. | They are general-purpose models, not petroleum models. Their performance on one Volve well is not evidence of broad transfer. |
 | 6. Arps decline comparison | Exponential, harmonic, and hyperbolic Arps curves, selected by AICc using the training history only | Arps is a familiar engineering decline baseline. It lets us compare a fitted decline trend with the data-driven and pretrained forecasts. | It models positive producing-rate decline. It does not model shut-ins, restarts, lift transitions, pressure support, or a recommended lift method. |
 | 7. FastAPI backend | JSON and file-upload routes for Arps analysis; optional HGB training on a supplied multiwell dataset; chart-ready response data | We wanted a stable interface an interactive dashboard can call without embedding model code in the browser. | It is an API, not a dashboard. HGB models live in server memory, and no route recommends artificial lift. |
+| 8. First frontend increment | React/TypeScript/Vite shell, responsive navigation, live API health/capability reads, and session-only API-origin setting | We needed a safe, honest application foundation in the same repository before wiring in data uploads and model workflows. | This is not yet a functioning dataset/analysis dashboard. Feature routes are explicitly marked as unavailable or in progress until their API-backed workflows are implemented. |
 
 We keep the synthetic and real-field experiments separate. We do not combine their scores into one accuracy number.
 
@@ -85,7 +86,7 @@ For the future solution-gas-drive task, we should retain both the raw source fil
 
 ## How to run it with our own well data
 
-There is no dashboard or interactive question-and-answer interface yet. In the notebook workflow, point `DATA_PATH` at your file and run the cells from top to bottom. The FastAPI backend also provides a file-upload endpoint for dashboard clients; see [FastAPI for a dashboard](#fastapi-for-a-dashboard) and the [API guide](docs/api_guide.md). The first notebook is the general pipeline demonstration; the second is specialized to the Volve workbook.
+The web app is only at its first shell stage; it does not yet provide a working upload-to-analysis or interactive question-and-answer flow. In the notebook workflow, point `DATA_PATH` at your file and run the cells from top to bottom. The FastAPI backend also provides a file-upload endpoint for dashboard clients; see [FastAPI for a dashboard](#fastapi-for-a-dashboard), [frontend setup](frontend/README.md), and the [API guide](docs/api_guide.md). The first notebook is the general pipeline demonstration; the second is specialized to the Volve workbook.
 
 ### 1. Install the project
 
@@ -172,6 +173,19 @@ sgd-api
 ```
 
 By default, the server listens only on `127.0.0.1:8000`. Open [`http://127.0.0.1:8000/docs`](http://127.0.0.1:8000/docs) for Swagger and [`docs/api_guide.md`](docs/api_guide.md) for request and response examples. The package can also be installed with `pip install "git+https://github.com/Wizzy-pixel-ui/GROUP-project-ML.git"`; it has **not** been released to PyPI.
+
+### Run the first frontend shell
+
+The frontend runs separately from FastAPI. In one terminal, start the backend using the command above. In a second terminal, run:
+
+```bash
+cd frontend
+cp .env.example .env.local
+pnpm install
+pnpm dev
+```
+
+Open the Vite URL printed in the terminal, normally `http://localhost:5173`. The current shell checks `/health` and `/v1/capabilities`; the other sections accurately identify what is still being implemented. For frontend tests, type checking, setup details, and the security boundary, see [`frontend/README.md`](frontend/README.md). Do not expose the unauthenticated API or upload confidential well histories to a public endpoint.
 
 | Endpoint | What it does |
 |---|---|
@@ -269,6 +283,11 @@ The earlier one-step Volve benchmarks tell a related but separate story: HGB’s
 ├── notebooks/
 │   ├── 01_natural_flow_adequacy_baseline.ipynb
 │   └── 02_volve_real_field_benchmark.ipynb
+├── frontend/                 # React/Vite shell; data workflows are in progress
+│   ├── src/
+│   ├── public/manus-routes.json
+│   ├── package.json
+│   └── README.md
 ├── scripts/compare_arps_models.py
 ├── reports/arps_comparison/
 │   ├── arps_model_comparison_metrics.csv
@@ -293,7 +312,7 @@ The earlier one-step Volve benchmarks tell a related but separate story: HGB’s
 
 - We do not have a field-validated classifier or time-to-event model for natural-flow inadequacy.
 - We do not have a confirmed set of solution-gas-drive wells with dated natural-flow-to-lift transitions and censored histories.
-- We do not have a dashboard or interactive assistant that asks engineering questions and returns a lift recommendation. The API has file-upload endpoints, but it is a backend service—not a GUI or engineering questionnaire.
+- We do not yet have a complete dashboard or interactive assistant. The current frontend is a shell with live API status and clearly marked feature pages; upload preview, analysis charts, training/prediction forms, and engineering questions remain to be implemented. The API has file-upload endpoints, but it does not return a lift recommendation.
 - We do not rank ESP, gas lift, rod pump, PCP, hydraulic lift, or other systems. No such model has been trained or tested here.
 - We do not automatically convert units, infer arbitrary vendor headers, verify regular cadence, identify a drive mechanism, or infer lift status. The API rejects duplicate well/date rows; it does not resolve or aggregate them for us.
 - Chronos models are optional generic forecasts; their weights are downloaded when used and are not stored in this repository.
@@ -310,12 +329,13 @@ This is a public repository. **Do not place confidential company data here or co
 
 ## Our next steps
 
-1. Agree on a measurable definition of inadequate natural flow, including rate units, duration, and decision horizon.
-2. Obtain field histories with verified solution-gas-drive classification, natural-flow/lift status over time, transition dates, interventions, and end-of-observation/censoring information.
-3. Add a robust data-intake and validation layer that produces a mapping/unit/missingness report before modeling; keep source-specific adapters separate from the canonical format.
-4. Benchmark simple engineering and statistical baselines on repeated well-held-out and time-held-out datasets. Report uncertainty and calibration, not just point errors.
-5. Build and validate time-to-inadequacy estimates only after event labels are adequate.
-6. Add a separate engineering feasibility and economics workflow for lift screening, with explicit constraints, traceable reasons, uncertainty, and engineer review. Do not label that output an automated recommendation until it has been evaluated against real outcomes.
+1. Finish the frontend data-intake flow: upload, preview, explicit column mapping, data-quality warnings, and API-backed analysis; then display returned series and metrics without inventing them.
+2. Agree on a measurable definition of inadequate natural flow, including rate units, duration, and decision horizon.
+3. Obtain field histories with verified solution-gas-drive classification, natural-flow/lift status over time, transition dates, interventions, and end-of-observation/censoring information.
+4. Add a robust data-intake and validation layer that produces a mapping/unit/missingness report before modeling; keep source-specific adapters separate from the canonical format.
+5. Benchmark simple engineering and statistical baselines on repeated well-held-out and time-held-out datasets. Report uncertainty and calibration, not just point errors.
+6. Build and validate time-to-inadequacy estimates only after event labels are adequate.
+7. Add a separate engineering feasibility and economics workflow for lift screening, with explicit constraints, traceable reasons, uncertainty, and engineer review. Do not label that output an automated recommendation until it has been evaluated against real outcomes.
 
 ## References and contribution notes
 

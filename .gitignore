@@ -8,6 +8,11 @@ build/
 dist/
 .DS_Store
 .env
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 reports/*
 !reports/.gitkeep
 !reports/arps_comparison/

@@ -1,0 +1,16 @@
+{
+  "routes": [
+    { "path": "/", "title": "Overview" },
+    { "path": "/production", "title": "Production Analytics" },
+    { "path": "/wells", "title": "Well Performance" },
+    { "path": "/reservoir", "title": "Reservoir Analysis" },
+    { "path": "/natural-flow", "title": "Natural Flow Assessment" },
+    { "path": "/artificial-lift", "title": "Artificial Lift" },
+    { "path": "/models", "title": "Machine Learning" },
+    { "path": "/predictions", "title": "Predictions" },
+    { "path": "/datasets", "title": "Dataset Management" },
+    { "path": "/reports", "title": "Reports" },
+    { "path": "/visualization", "title": "3D & Monitoring" },
+    { "path": "/settings", "title": "Settings" }
+  ]
+}
