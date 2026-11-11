@@ -185,7 +185,7 @@ pnpm install
 pnpm dev
 ```
 
-Open the Vite URL printed in the terminal, normally `http://localhost:5173`. The current shell checks `/health` and `/v1/capabilities`; the other sections accurately identify what is still being implemented. For frontend tests, type checking, setup details, and the security boundary, see [`frontend/README.md`](frontend/README.md). Do not expose the unauthenticated API or upload confidential well histories to a public endpoint.
+Open the Vite URL printed in the terminal, normally `http://127.0.0.1:5173`. The current shell checks `/health` and `/v1/capabilities`; the other sections accurately identify what is still being implemented. For frontend tests, type checking, setup details, and the security boundary, see [`frontend/README.md`](frontend/README.md). Do not expose the unauthenticated API or upload confidential well histories to a public endpoint.
 
 | Endpoint | What it does |
 |---|---|
