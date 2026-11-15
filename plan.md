@@ -26,6 +26,10 @@ Initial implementation is for local development against a separately running Fas
 
 A deployable production arrangement is a later architecture decision: it requires a secured, publicly reachable Python API, user authentication/authorization and per-user data isolation, protected file/model storage, HTTPS, request limits, and an approved data lifecycle. A static frontend by itself does not make the existing API secure or publicly reachable.
 
+#### Approved constrained test deployment (2026-11-15)
+
+The user approved a password-protected full-stack test deployment and selected Hugging Face. This limited scope uses one shared HTTP Basic password held only as a Space Secret, requires HTTPS, gates the frontend and API, rejects deployment access when the password is missing or shorter than 20 characters, and keeps uploaded request data in memory. It is not individual authentication, account authorization, per-user isolation, durable storage, or a production-security review. Hugging Face documentation currently requires a paid plan to create a Docker Space; no paid plan is authorized. The deployment must not be created until account-plan eligibility and any cost are explicitly approved. The app must continue to state that IPR/VLP/nodal analysis, validated natural-flow transition prediction, artificial-lift recommendations, and true 3D are not implemented.
+
 ## Navigation and outcomes
 
 Navigation items must lead to a functional page or a plainly marked “not implemented” page; never use decorative controls that imply functionality.

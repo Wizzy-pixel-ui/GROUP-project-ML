@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "./App";
+import { WorkspaceProvider } from "./workspaceContext";
 
 vi.mock("../hooks/useApiStatus", () => ({
   useApiStatus: () => ({
@@ -15,9 +16,11 @@ vi.mock("../hooks/useApiStatus", () => ({
 
 function renderRoute(path = "/") {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <AppRoutes />
-    </MemoryRouter>,
+    <WorkspaceProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <AppRoutes />
+      </MemoryRouter>
+    </WorkspaceProvider>,
   );
 }
 
@@ -26,17 +29,38 @@ describe("application shell", () => {
     window.sessionStorage.clear();
   });
 
-  it("shows an honest no-dataset state on the overview", () => {
+  it("shows an honest no-analysis state on the overview", async () => {
     renderRoute();
-    expect(screen.getByRole("heading", { name: "Well analytics workspace" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "No dataset loaded", level: 3 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Well analytics workspace" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "No analysis loaded", level: 3 })).toBeInTheDocument();
     expect(screen.getByText(/does not confirm reservoir drive mechanism/i)).toBeInTheDocument();
   });
 
-  it("opens the artificial-lift route and clearly labels its implementation status", () => {
+  it("opens the upload workflow and states the API's actual required schema", async () => {
+    renderRoute("/datasets");
+    expect(await screen.findByRole("heading", { name: "Dataset manager" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /choose file/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /load volve sample/i })).toBeInTheDocument();
+    expect(screen.getByText(/well identifier, observation date and oil rate/i)).toBeInTheDocument();
+  });
+
+  it("provides live-workflow pages with useful empty states until data is analyzed", async () => {
+    renderRoute("/production");
+    expect(await screen.findByRole("heading", { name: "No analyzed history yet" })).toBeInTheDocument();
+    renderRoute("/wells");
+    expect(await screen.findByRole("heading", { name: "No well analysis available" })).toBeInTheDocument();
+    renderRoute("/models");
+    expect(await screen.findByRole("heading", { name: "Machine-learning workspace" })).toBeInTheDocument();
+    renderRoute("/reservoir");
+    expect(await screen.findByRole("heading", { name: "No analyzed pressure data" })).toBeInTheDocument();
+    renderRoute("/natural-flow");
+    expect(await screen.findByRole("heading", { name: "No natural-flow check available" })).toBeInTheDocument();
+  });
+
+  it("opens the artificial-lift route and clearly labels its implementation status", async () => {
     renderRoute();
     fireEvent.click(screen.getByRole("link", { name: "Artificial lift" }));
-    expect(screen.getByRole("heading", { name: "Artificial-lift screening" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Artificial-lift screening" })).toBeInTheDocument();
     expect(screen.getByText("Screening engine planned · not available yet")).toBeInTheDocument();
     expect(screen.getByText(/will not replace IPR\/VLP\/nodal analysis/i)).toBeInTheDocument();
   });

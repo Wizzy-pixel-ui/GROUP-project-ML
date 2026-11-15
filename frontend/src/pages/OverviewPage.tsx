@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, CircleHelp, Database, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useApiStatusContext } from "../app/apiStatusContext";
+import { useWorkspace } from "../app/workspaceContext";
 
 function StatusBadge({ label, tone }: { label: string; tone: "green" | "amber" | "slate" }) {
   const toneClass = tone === "green" ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" : tone === "amber" ? "border-amber-300/25 bg-amber-300/10 text-amber-200" : "border-line bg-panel text-slate-300";
@@ -9,6 +10,11 @@ function StatusBadge({ label, tone }: { label: string; tone: "green" | "amber" |
 
 export function OverviewPage() {
   const { connection, health, capabilities, error } = useApiStatusContext();
+  const { state } = useWorkspace();
+  const results = state.analysis?.results ?? [];
+  const latestRates = results.map((result) => result.history[result.history.length - 1]?.oil_rate).filter((rate): rate is number => typeof rate === "number");
+  const meanLatestRate = latestRates.length ? latestRates.reduce((sum, rate) => sum + rate, 0) / latestRates.length : null;
+  const documentedOilUnit = results.length && results.every((result) => result.units.oil_rate === results[0].units.oil_rate) ? results[0].units.oil_rate : null;
   const modelNames = capabilities?.analysis_models ?? [];
 
   return (
@@ -31,17 +37,22 @@ export function OverviewPage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="eyebrow">Current session</p>
-              <h3 className="mt-2 text-lg font-semibold text-white">No dataset loaded</h3>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">Upload a production-history table to populate well counts, latest rates, pressure history, and chart series. Files stay in this browser session and are not saved by this app.</p>
+              <h3 className="mt-2 text-lg font-semibold text-white">{results.length ? `${results.length} well${results.length === 1 ? "" : "s"} analyzed` : "No analysis loaded"}</h3>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">{results.length ? `Source: ${state.file?.name ?? "file no longer available in this session"}. Summaries below are calculated from the API response.` : "Upload a production-history table to populate well counts, latest rates, pressure history, and chart series. Files stay in this browser session and are not saved by this app."}</p>
             </div>
             <StatusBadge label="Awaiting data" tone="slate" />
           </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {["Wells", "Oil rate", "Gas rate", "Water cut"].map((label) => (
+            {[
+              { label: "Analyzed wells", value: results.length ? results.length.toLocaleString() : "—", note: results.length ? "From current API response" : "No dataset loaded" },
+              { label: "Mean latest oil rate", value: meanLatestRate == null ? "—" : `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(meanLatestRate)}${documentedOilUnit ? ` ${documentedOilUnit}` : ""}`, note: results.length ? "Across analyzed wells" : "No dataset loaded" },
+              { label: "History observations", value: results.length ? results.reduce((sum, result) => sum + result.row_count, 0).toLocaleString() : "—", note: results.length ? "Rows returned by API" : "No dataset loaded" },
+              { label: "Lift decision", value: results.length ? "Unavailable" : "—", note: results.length ? "Selector not implemented" : "No dataset loaded" },
+            ].map(({ label, value, note }) => (
               <div key={label} className="metric-placeholder">
                 <span className="text-xs text-slate-500">{label}</span>
-                <span className="mt-2 block font-mono text-2xl text-slate-500">—</span>
-                <span className="mt-1 block text-[10px] text-slate-600">No dataset loaded</span>
+                <span className={`mt-2 block font-mono text-xl ${results.length ? "text-slate-100" : "text-slate-500"}`}>{value}</span>
+                <span className="mt-1 block text-[10px] text-slate-600">{note}</span>
               </div>
             ))}
           </div>
@@ -110,7 +121,7 @@ export function OverviewPage() {
         <div className="flex items-start gap-3">
           <span className="rounded-lg border border-line bg-[#152238] p-2 text-slate-300"><CircleHelp size={17} /></span>
           <div>
-            <p className="text-sm font-medium text-slate-200">Start with a clean data contract</p>
+            <p className="text-sm font-medium text-slate-200">{results.length ? "Current analysis is held in this tab" : "Start with a clean data contract"}</p>
             <p className="mt-1 text-xs leading-5 text-slate-500">Required fields: well identifier, observation date, and oil rate. Units are documented—not converted—by the current API.</p>
           </div>
         </div>

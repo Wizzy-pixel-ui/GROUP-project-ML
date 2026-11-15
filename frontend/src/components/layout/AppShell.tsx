@@ -103,7 +103,7 @@ export function AppShell() {
               <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-cyan" /> Local research build
               </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-slate-500">Session-only data · no user login · no field persistence</p>
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-500">Session-only data · no individual accounts · no field persistence</p>
             </div>
           </div>
         </aside>

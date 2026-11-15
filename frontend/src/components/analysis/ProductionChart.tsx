@@ -1,0 +1,57 @@
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import type { HistoryPoint, WellAnalysis } from "../../types/analysis";
+
+export type ChartVariable = "oil_rate" | "gas_rate" | "water_rate" | "reservoir_pressure" | "bhp" | "bubble_point_pressure";
+
+const labels: Record<ChartVariable, string> = {
+  oil_rate: "Oil rate",
+  gas_rate: "Gas rate",
+  water_rate: "Water rate",
+  reservoir_pressure: "Reservoir pressure",
+  bhp: "Flowing bottom-hole pressure (BHP)",
+  bubble_point_pressure: "Bubble-point pressure",
+};
+
+export function ProductionChart({ result, thresholdRate, variable = "oil_rate", dateFrom = "", dateTo = "" }: {
+  result: WellAnalysis;
+  thresholdRate?: number | null;
+  variable?: ChartVariable;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
+  const history = result.history
+    .filter((point) => (!dateFrom || point.date >= dateFrom) && (!dateTo || point.date <= dateTo))
+    .map((point: HistoryPoint) => ({
+      date: point.date,
+      observed: typeof point[variable] === "number" ? point[variable] as number : null,
+      arps: null as number | null,
+      persistence: null as number | null,
+    }));
+  const forecasts = variable === "oil_rate" ? result.forecast
+    .filter((point) => (!dateFrom || point.date >= dateFrom) && (!dateTo || point.date <= dateTo))
+    .map((point) => ({ date: point.date, observed: null as number | null, arps: point.arps_oil_rate, persistence: point.persistence_oil_rate })) : [];
+  const chartData = [...history, ...forecasts];
+  const unitKey = variable === "gas_rate" ? "gas_rate" : variable === "water_rate" ? "water_rate" : variable === "bhp" || variable === "reservoir_pressure" || variable === "bubble_point_pressure" ? "pressure" : "oil_rate";
+  const unit = result.units[unitKey] ?? "source unit not documented";
+  const hasObserved = history.some((point) => point.observed != null);
+
+  return (
+    <div className="panel-card p-4 sm:p-5">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3"><div><p className="eyebrow">Well {result.well_id}</p><h3 className="mt-1 font-semibold text-white">{labels[variable]} history{variable === "oil_rate" ? " and forecast" : ""}</h3><p className="mt-1 text-[11px] text-slate-500">{labels[variable]} · {unit}{dateFrom || dateTo ? ` · ${dateFrom || "start"} to ${dateTo || "latest"}` : ""}</p></div><div className="flex flex-wrap gap-2 text-[10px]"><span className="soft-chip"><i className="mr-2 inline-block h-0.5 w-3 bg-cyan" />Observed</span>{variable === "oil_rate" && <><span className="soft-chip"><i className="mr-2 inline-block h-0.5 w-3 bg-amber-300" />Arps</span><span className="soft-chip"><i className="mr-2 inline-block h-0.5 w-3 bg-slate-400" />Persistence</span></>}</div></div>
+      {!hasObserved ? <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed border-line text-sm text-slate-500">No {labels[variable].toLowerCase()} observations are available for this well and date window.</div> : <div className="h-[300px] w-full sm:h-[360px]" role="img" aria-label={`${labels[variable]} for well ${result.well_id}`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 8, right: 14, left: 0, bottom: 4 }}>
+            <CartesianGrid stroke="#263449" strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="date" tickFormatter={(value: string) => value.slice(0, 7)} tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={{ stroke: "#334155" }} tickLine={false} minTickGap={28} />
+            <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} width={52} />
+            <Tooltip contentStyle={{ background: "#0d1727", border: "1px solid #334155", borderRadius: 8, color: "#e2e8f0", fontSize: 12 }} labelStyle={{ color: "#94a3b8" }} formatter={(value, name) => { const numeric = typeof value === "number" ? value : Number(value); const formatted = value == null || !Number.isFinite(numeric) ? "—" : `${numeric.toFixed(2)} ${unit}`; const seriesName = name === "observed" ? `Observed ${labels[variable].toLowerCase()}` : name === "arps" ? "Arps scenario" : "Persistence reference"; return [formatted, seriesName]; }} labelFormatter={(label) => `Date: ${String(label ?? "")}`} />
+            {variable === "oil_rate" && thresholdRate != null && <ReferenceLine y={thresholdRate} stroke="#fb7185" strokeDasharray="5 4" label={{ value: "User threshold", fill: "#fda4af", fontSize: 10, position: "insideTopRight" }} />}
+            <Line type="monotone" dataKey="observed" name="observed" stroke="#48d7e8" strokeWidth={2.2} dot={false} activeDot={{ r: 4 }} connectNulls={false} />
+            {variable === "oil_rate" && <><Line type="monotone" dataKey="arps" name="arps" stroke="#fbbf24" strokeWidth={2} strokeDasharray="6 4" dot={false} activeDot={{ r: 4 }} connectNulls={false} /><Line type="monotone" dataKey="persistence" name="persistence" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="3 5" dot={false} activeDot={{ r: 3 }} connectNulls={false} /></>}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>}
+      <p className="mt-2 text-[10px] leading-4 text-slate-500">{variable === "oil_rate" ? "Arps and persistence are API-generated reference series, not calibrated transition predictions or production recommendations. The threshold is an observed-rule setting, not a lift trigger." : "This panel displays submitted measurements only; the current API does not forecast pressure, gas rate, or water rate."}</p>
+    </div>
+  );
+}

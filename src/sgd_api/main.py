@@ -3,13 +3,18 @@ from __future__ import annotations
 import io
 import json
 import os
+import base64
+import binascii
+import secrets
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from sgd_api.data import REQUIRED_COLUMNS
 from sgd_api.schemas import AnalysisRequest, AnalysisResponse, ProductionRecord, TrainingRequest, TrainingResponse
@@ -17,6 +22,7 @@ from sgd_api.service import API_VERSION, analyze_request
 from sgd_api.training import get_model, train_hgb_model
 
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+MAX_UPLOAD_ROWS = 100_000
 _SUPPORTED_UPLOADS = {".csv", ".xlsx", ".xls", ".parquet", ".json"}
 
 
@@ -40,6 +46,46 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def shared_password_gate(request: Request, call_next):
+    """Require HTTP Basic authentication when explicitly enabled for deployment."""
+    if os.getenv("APP_REQUIRE_AUTH", "false").strip().lower() not in {"1", "true", "yes"}:
+        return await call_next(request)
+
+    expected_password = os.getenv("APP_PASSWORD", "")
+    expected_username = os.getenv("APP_USERNAME", "group")
+    if len(expected_password) < 20:
+        return PlainTextResponse(
+            "Deployment authentication is not configured with a strong password.",
+            status_code=503,
+            headers={"Cache-Control": "no-store"},
+        )
+
+    authorization = request.headers.get("authorization", "")
+    username = password = ""
+    try:
+        scheme, encoded = authorization.split(" ", 1)
+        if scheme.lower() == "basic":
+            decoded = base64.b64decode(encoded, validate=True).decode("utf-8")
+            username, password = decoded.split(":", 1)
+    except (ValueError, UnicodeDecodeError, binascii.Error):
+        pass
+
+    valid = secrets.compare_digest(username, expected_username) and secrets.compare_digest(password, expected_password)
+    if not valid:
+        return PlainTextResponse(
+            "Password required to access the GROUP Project ML test deployment.",
+            status_code=401,
+            headers={
+                "WWW-Authenticate": 'Basic realm="GROUP Project ML test", charset="UTF-8"',
+                "Cache-Control": "no-store",
+            },
+        )
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def _parse_json_object(value: str | None, field_name: str) -> dict[str, Any]:
@@ -82,6 +128,8 @@ def _read_table(filename: str, content: bytes) -> pd.DataFrame:
             frame = pd.read_json(stream)
     except Exception as exc:
         raise HTTPException(status_code=422, detail=f"Could not read uploaded table: {exc}") from exc
+    if len(frame) > MAX_UPLOAD_ROWS:
+        raise HTTPException(status_code=413, detail=f"Uploaded table has {len(frame):,} rows; the API limit is {MAX_UPLOAD_ROWS:,} rows per request")
     return frame
 
 
@@ -156,6 +204,96 @@ def capabilities() -> dict[str, Any]:
         "three_dimensional_reservoir_visualization_data_available": False,
         "model_registry": "in-memory; models are cleared when the API process restarts",
         "disclaimer": "Research prototype. Forecasts are not calibrated transition probabilities or operating recommendations.",
+    }
+
+
+@app.post("/v1/preview/upload", tags=["analysis"])
+async def preview_upload(
+    file: UploadFile = File(...),
+    column_map: str | None = Form(default=None, description="JSON object mapping source column names to canonical names"),
+) -> dict[str, Any]:
+    """Previewing an upload in memory and reporting schema/data-quality diagnostics."""
+    content = await _read_upload(file)
+    source_frame = _read_table(file.filename or "", content)
+    source_columns = [str(column) for column in source_frame.columns]
+    frame = source_frame.copy()
+    mapping = _parse_json_object(column_map, "column_map")
+    if mapping:
+        if not all(isinstance(source, str) and isinstance(target, str) for source, target in mapping.items()):
+            raise HTTPException(status_code=422, detail="column_map must map source header strings to canonical header strings")
+        frame = frame.rename(columns=mapping)
+
+    missing_required = sorted(REQUIRED_COLUMNS.difference(frame.columns))
+    missing_by_column = {str(column): int(frame[column].isna().sum()) for column in frame.columns}
+    invalid_date_count = None
+    invalid_oil_rate_count = None
+    duplicate_well_date_rows = None
+    median_observation_interval_days = None
+    min_observation_interval_days = None
+    max_observation_interval_days = None
+    distinct_observation_intervals = None
+    wells_with_intervals = 0
+    if "date" in frame.columns:
+        parsed_dates = pd.to_datetime(frame["date"], errors="coerce")
+        invalid_date_count = int(parsed_dates.isna().sum())
+        if "well_id" in frame.columns:
+            duplicate_frame = pd.DataFrame({"well_id": frame["well_id"], "date": parsed_dates})
+            duplicate_well_date_rows = int(duplicate_frame.duplicated(subset=["well_id", "date"], keep=False).sum())
+            dated = pd.DataFrame({"well_id": frame["well_id"], "date": parsed_dates}).dropna(subset=["well_id", "date"])
+            intervals = []
+            for _, well_rows in dated.groupby("well_id", sort=False):
+                differences = well_rows["date"].sort_values().diff().dt.total_seconds().div(86400.0)
+                positive_differences = differences[differences > 0]
+                if not positive_differences.empty:
+                    wells_with_intervals += 1
+                    intervals.extend(positive_differences.tolist())
+            if intervals:
+                interval_values = np.round(np.asarray(intervals, dtype=float), 3)
+                median_observation_interval_days = float(np.median(interval_values))
+                min_observation_interval_days = float(np.min(interval_values))
+                max_observation_interval_days = float(np.max(interval_values))
+                distinct_observation_intervals = int(len(np.unique(interval_values)))
+    if "oil_rate" in frame.columns:
+        numeric_rates = pd.to_numeric(frame["oil_rate"], errors="coerce").replace([np.inf, -np.inf], np.nan)
+        invalid_oil_rate_count = int(numeric_rates.isna().sum())
+
+    def preview_value(value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, pd.Timestamp):
+            return value.isoformat()
+        if isinstance(value, np.generic):
+            value = value.item()
+        if isinstance(value, float) and not np.isfinite(value):
+            return None
+        try:
+            if pd.isna(value):
+                return None
+        except (TypeError, ValueError):
+            pass
+        return value
+
+    preview_rows = [
+        {str(key): preview_value(value) for key, value in row.items()}
+        for row in source_frame.head(50).to_dict(orient="records")
+    ]
+    return {
+        "filename": file.filename or "uploaded file",
+        "row_count": int(len(source_frame)),
+        "columns": source_columns,
+        "preview_rows": preview_rows,
+        "missing_by_column": missing_by_column,
+        "mapped_columns": [str(column) for column in frame.columns],
+        "missing_required": missing_required,
+        "invalid_date_count": invalid_date_count,
+        "invalid_oil_rate_count": invalid_oil_rate_count,
+        "duplicate_well_date_rows": duplicate_well_date_rows,
+        "median_observation_interval_days": median_observation_interval_days,
+        "min_observation_interval_days": min_observation_interval_days,
+        "max_observation_interval_days": max_observation_interval_days,
+        "distinct_observation_intervals": distinct_observation_intervals,
+        "wells_with_intervals": wells_with_intervals,
+        "note": "Preview reads the submitted file in memory. It does not convert units, repair rows, or persist the upload.",
     }
 
 
@@ -253,3 +391,17 @@ def model_info(model_id: str) -> dict[str, Any]:
         "feature_count": len(bundle.feature_columns),
         "storage": "in-memory only",
     }
+
+
+_FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if _FRONTEND_DIST.is_dir():
+    if (_FRONTEND_DIST / "assets").is_dir():
+        app.mount("/assets", StaticFiles(directory=_FRONTEND_DIST / "assets"), name="frontend-assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def frontend_routes(full_path: str):
+        dist_root = _FRONTEND_DIST.resolve()
+        requested = (dist_root / full_path).resolve()
+        if requested.is_relative_to(dist_root) and requested.is_file():
+            return FileResponse(requested)
+        return FileResponse(dist_root / "index.html")

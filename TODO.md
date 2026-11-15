@@ -13,35 +13,37 @@ This tracker preserves the approved plan's user-facing outcomes and concrete req
 - [ ] Complete visual review at desktop/mobile widths and verify every navigation/control at runtime. Avoid marking UI polish complete until those checks pass.
 - [x] Honor reduced-motion settings and avoid simulated live values or ambient animation.
 
-## 2. Well-history intake, mapping, validation and session data handling — open
+## 2. Well-history intake, mapping, validation and session data handling — implemented; integration review in progress
 
-- [ ] Support CSV, XLS, XLSX, Parquet, and JSON using the existing API upload routes.
-- [ ] Provide upload → preview/map → validate → analyze, including field detection, missingness, duplicate well/date checks, cadence and numeric parsing diagnostics.
-- [ ] Map explicitly to canonical `well_id`, `date`, `oil_rate` and optional API fields; explain schema errors without silently repairing data.
-- [ ] Preserve original source units and do not silently convert units, aggregate duplicate records, invent missing values, infer drive mechanism, or assume calendar-month cadence.
-- [ ] Keep uploaded histories in browser memory for the session only. Do not send them to third parties, commit private files, or enable an unauthenticated public endpoint.
-- [ ] Provide empty/loading/success/error/insufficient-data states and leave source files unmodified.
+- [x] Support CSV, XLS, XLSX, Parquet, and JSON using the API's upload/preview routes, with 25 MB and 100,000-row request limits.
+- [x] Provide upload → preview/map → validate → analyze, including conservative field-detection suggestions, missingness, duplicate well/date checks, positive calendar-gap statistics, and date/rate parsing diagnostics.
+- [x] Map explicitly to canonical `well_id`, `date`, `oil_rate` and optional API fields; explain schema errors without silently repairing data.
+- [x] Preserve original source units and do not silently convert units, aggregate duplicate records, invent missing values, infer drive mechanism, or assume calendar-month cadence.
+- [x] Keep uploaded histories in browser memory for the session only. Do not send them to third parties, commit private files, or enable an unauthenticated public endpoint.
+- [x] Provide empty/loading/success/error/insufficient-data states and leave source files unmodified.
 
-## 3. Production analytics, well analysis and downloadable outputs — open
+## 3. Production analytics, well analysis and downloadable outputs — implemented; visual review open
 
-- [ ] Connect to actual API routes and render only returned data.
-- [ ] Add well selection, variable selection, date filters and charts for returned historical values and Arps/persistence forecasts, with correct units, labels, legends and chart tables.
-- [ ] Display trend, Arps form/parameters, forecast arrays, observed threshold, warnings and optional HGB point prediction only when returned.
-- [ ] Distinguish observed threshold status from learned future prediction. Do not imply pressure forecasts or lift decisions that the API does not provide.
-- [ ] Add CSV/JSON exports carrying source, units, settings and limitations; only call PDF reporting complete after generation and review.
-- [ ] Provide readable accessible tables and charts; never fabricate actual-data values.
+- [x] Connect to actual API routes and render only returned data.
+- [x] Add well selection, variable selection, date filters and charts for returned historical values and Arps/persistence forecasts, with source-unit labels, legends and chart tables.
+- [x] Display trend, Arps form/parameters, forecast arrays, observed threshold, API-returned warnings and optional HGB point prediction only when returned.
+- [x] Distinguish observed threshold status from learned future prediction. Do not imply pressure forecasts or lift decisions that the API does not provide.
+- [x] Add CSV/JSON exports carrying source, mapping, units, analysis settings and limitations; no PDF report is claimed.
+- [x] Provide readable tables and charts; never fabricate actual-data values.
 
-## 4. Existing HGB model training and prediction workspace — open
+## 4. Existing HGB model training and prediction workspace — implemented; real multiwell validation remains user-data dependent
 
-- [ ] Add multiwell HGB training via the existing API JSON/upload routes and display returned model ID, held-out-well metrics and persistence baseline.
-- [ ] Explain minimum data, that `horizon_steps` counts rows, one-split limitations, in-memory registry reset, and lack of sharing across workers.
-- [ ] Support prediction using the existing contract only; show actual response values and errors.
-- [ ] Display models only when `/v1/capabilities` says the backend supports them. Keep HGB, Arps, persistence, optional Chronos and future transition models clearly separated by capability/status.
-- [ ] Label synthetic and Volve data correctly. Volve is real field production history, not validation of a solution-gas-drive lift-transition model.
+- [x] Add multiwell HGB training via the existing API upload route and display returned model ID, held-out-well metrics and persistence baseline.
+- [x] Explain minimum data, that `horizon_steps` counts rows, one-split limitations, in-memory registry reset, and lack of sharing across workers.
+- [x] Support prediction using the existing contract only; show actual response values and errors.
+- [x] Display HGB training only when `/v1/capabilities` reports the trainable model. Keep HGB, Arps and persistence separate from future transition models.
+- [x] Label the synthetic fixture and Volve field sample correctly. Volve is real field production history, not validation of a solution-gas-drive lift-transition model.
 
 ## 5. Reservoir engineering context and preliminary artificial-lift screening — open
 
-- [ ] Keep the current API gap explicit: no IPR, VLP, nodal operating point, pressure-drop forecast, drive classifier, lift selector, or validated natural-flow transition prediction.
+- [x] Keep the current API gap explicit: no IPR, VLP, nodal operating point, pressure-drop forecast, drive classifier, lift selector, or validated natural-flow transition prediction.
+- [x] Show submitted reservoir pressure, flowing BHP, and bubble-point history as measurements; label a P-res minus bubble-point arithmetic difference as an observation only when a shared pressure unit is documented.
+- [x] Show the API's threshold status and historical crossing separately from any predicted transition; retain unknown lift-state status when no dated observations are supplied.
 - [ ] Before showing a lift shortlist, implement an auditable Python screening module and API contract, collecting the reservoir/fluid/rate/pressure/free-gas/solids/viscosity/temperature, well trajectory/completion, facilities, power/gas/power-fluid, intervention/serviceability, reliability, lifecycle economics and priority inputs required by the method.
 - [ ] Consider gas lift, ESP, sucker-rod pump, PCP and hydraulic lift; include plunger lift as an optional gas-well/liquid-loading path. Reflect method-specific suitability/adverse factors in `docs/artificial_lift_selection_methodology.md`.
 - [ ] Apply documented feasibility gates before ranking. Classify methods `eligible`, `conditional`, `screened_out`, or `unknown`; a missing hard constraint stays unknown, not passed. Make weights configurable and show sensitivity; weighted scores never override hard failures.
@@ -52,7 +54,7 @@ This tracker preserves the approved plan's user-facing outcomes and concrete req
 
 ## 6. Reports, monitoring, 3D and extended dashboard features — open
 
-- [ ] Include provenance, units, analysis settings, status, assumptions and limitations in exported reports.
+- [x] Include provenance, units, analysis settings, status, assumptions and limitations in JSON/CSV exports.
 - [ ] Any generated monitoring series/events must be visibly labeled simulated and separated from field data; never imply an instrument connection without authorization and implementation.
 - [ ] Keep 3D unavailable until geometry/trajectory data with validated source, coordinate reference, units and permissions are supplied. Label any conceptual geometry clearly.
 - [ ] Do not introduce user accounts, persistent storage, dataset history or model history until ownership, retention/deletion, isolation, backup and export requirements are agreed and implemented.
@@ -61,16 +63,29 @@ This tracker preserves the approved plan's user-facing outcomes and concrete req
 
 - [x] Document local frontend setup and its separate connection to FastAPI in `frontend/README.md`; add an example API URL configuration and no browser secrets.
 - [x] Document exact frontend/backend install, run, test and integration commands in the root and frontend READMEs.
-- [x] Preserve the existing Python API contract; this increment adds no backend endpoints or schemas.
+- [x] Preserve the existing analysis/training contracts; add only the in-memory upload-preview diagnostics route required for safe interactive mapping and validation.
 - [x] Keep dependency lockfiles, Node/package-manager pin, route manifest, and example environment files current.
 - [x] Add tests for this increment, run the existing backend tests, and perform a read-only implementation review; fix the review's loopback-binding issue.
 - [x] Do not deploy the unauthenticated API or dashboard publicly in this increment; public deployment remains gated on auth, access control, HTTPS, user isolation, protected storage, rate/resource limits, privacy-safe logging and model/file lifecycle.
 - [x] Check the exact diff and push this increment to the existing authorized public repository. No deployment is claimed in this increment.
 
+## 8. Password-protected test deployment — blocked on hosting-plan authorization
+
+- [x] Add a same-origin Docker deployment definition that builds the React application and runs FastAPI on Hugging Face's configured port.
+- [x] Add an HTTP Basic password gate for all routes, require a 20-character minimum server-side secret, fail closed when the secret is absent, and mark protected responses `no-store`.
+- [x] Add authentication tests and document secret handling, the shared-credential limitation, supported prototype features, and engineering exclusions.
+- [x] Run backend/frontend suites and production build; direct local auth/preview/API checks are covered by tests and the real Volve API integration check.
+- [ ] Create a Hugging Face Docker Space only after the account owner authorizes an eligible paid plan. Current official documentation says Docker Spaces require a paid plan to create; the connected account is not Pro. Do not create a paid resource or claim a public URL before authorization and a successful health/capability check.
+- [ ] Set `APP_PASSWORD` as a Hugging Face Space Secret (never a public variable or repository file), deploy, and verify the authentication prompt and protected API over HTTPS.
+- [ ] Do not describe the shared Basic password as per-user authorization or production-grade isolation. No private well files should be submitted to this public research test.
+
 ## Current progress
 
 - Repository assessment is in `docs/technical_assessment.md`; lift methodology is in `docs/artificial_lift_selection_methodology.md`; the approved phased plan is in `plan.md`.
-- First frontend increment adds the responsive routed shell, live health/capability checks, session-only API origin settings, empty/unavailable states and a status page for every requested area. A read-only review caught the wildcard Vite binding; it was removed, and runtime verification confirmed the server now binds only to `127.0.0.1` by default.
-- Frontend typecheck, 6 UI/API-origin tests, and production build pass; the existing Python suite passes (9 tests). Live local checks confirmed `/health`, `/v1/capabilities`, CORS for the Vite origin, and HTTP 200 for all 12 declared routes. Desktop visual review is complete; mobile visual review remains open.
-- The tested increment and loopback safety fix are on the existing public repository's `main`; no public deployment is claimed. Temporary preview/test servers were stopped.
-- Next: build the upload, column-mapping, validation and analysis workflow using the actual `/v1/analyze/upload` contract, without claiming that lift recommendations or 3D are already available.
+- The dashboard now supports a 5-format upload workflow, source-column mapping, units, validation, rate/pressure charts and tables, per-well summaries, threshold observations, HGB training/inference, and JSON/CSV exports. The bundled Volve file is real field production history with source attribution, not transition-label evidence.
+- The upload-preview API reports missing fields, invalid dates/rates, duplicate well/date rows, and observed day gaps; it reads in memory, does not repair values, and enforces byte/row limits.
+- Backend tests pass (14); frontend strict typecheck and 9 UI/API tests pass. A real TestClient run previewed 9,143 Volve rows and analyzed six producer wells (9,143 rows, 18 three-month forecast points); pressure history was present for five. Production build succeeded; mobile/browser visual review remains open.
+- No Hugging Face Space has been created. The Docker image requires a runtime password Secret, but Hugging Face hosting is blocked on the account's current plan; no paid resource or reusable deployment password was created. A separate temporary sandbox preview is password-gated and may expire with this session; its credential is kept out of the repository.
+- Hugging Face account status was checked: authenticated as `WizzyKeli`, not Pro. Official current docs state that Docker Spaces need a paid plan to create. The deployment remains blocked; no upgrade or paid resource was initiated.
+- Password-gated full-stack Docker files and deployment guidance are present but have not been container-built or deployed to a persistent provider. The temporary sandbox preview is running from the production frontend build and is verified to reject anonymous requests. Its auth gate is a shared group credential, not per-user access control.
+- Next: complete desktop/mobile visual review and end-to-end interface checks; then request plan authorization for Hugging Face deployment. Artificial-lift recommendations, IPR/VLP/nodal analysis, natural-flow transition prediction, and 3D remain future engineering work.

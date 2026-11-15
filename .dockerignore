@@ -1,0 +1,17 @@
+.git
+.venv
+__pycache__
+.pytest_cache
+.ipynb_checkpoints
+node_modules
+frontend/node_modules
+frontend/dist
+data
+notebooks
+reports
+build
+dist
+*.ipynb
+*.py[cod]
+.env
+frontend/.env

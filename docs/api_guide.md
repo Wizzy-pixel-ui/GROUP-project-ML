@@ -28,6 +28,7 @@ The project code is MIT-licensed; the included Volve data have separate source t
 |---|---|
 | `GET /health` | Basic health check. |
 | `GET /v1/capabilities` | Lists supported formats, models, and unavailable functions. |
+| `POST /v1/preview/upload` | Reads a supported table in memory and returns headers, the first 50 source rows, missing counts, canonical-schema/date/rate/duplicate diagnostics, and positive row-to-row calendar-gap statistics after optional source-to-canonical column mapping. It does not persist, convert, or repair the upload. |
 | `POST /v1/analyze` | Analyzes one or more wells from a JSON `records` list; fits an Arps family per well and returns threshold checks and chart-ready series. Optionally includes an HGB prediction if `model_id` is supplied. |
 | `POST /v1/analyze/upload` | Same analysis using a CSV, XLS/XLSX, Parquet, or JSON multipart upload. Supports source-to-canonical column mapping. Upload limit: 25 MB. |
 | `POST /v1/models/train` | Trains HistGradientBoosting on a multiwell JSON dataset, reports one held-out-well validation split, then retains the fitted model in this API process. |
@@ -120,6 +121,8 @@ curl -X POST http://127.0.0.1:8000/v1/analyze/upload \
 
 `/v1/models/train/upload` accepts the same `file` and `column_map` fields plus `horizon_steps` and an optional JSON array `exclude_well_ids`. The service rejects unsupported file types, missing required columns, invalid dates/rates, duplicate well/date rows, and uploads larger than 25 MB rather than silently fixing them.
 
+The dashboard first calls `POST /v1/preview/upload` with the selected file and mapping, displays a bounded preview, and blocks analysis when mapped required fields, dates/rates, or well/date uniqueness fail. It displays positive row-to-row interval min/median/max and distinct gaps as descriptive calendar days; it does not infer a monthly cadence or resample. The map is a JSON object whose keys are source headers and values are canonical names. The client asks the user to document oil-rate units, but it does not convert values; rates and other metadata still require source verification. Uploads are limited to 25 MB and 100,000 parsed rows.
+
 ## Response data for dashboard charts
 
 Each analysis result includes:
@@ -141,7 +144,7 @@ A browser dashboard can call the endpoints with `fetch` and render returned `his
 
 For a handoff to a coding assistant, use the copy-ready [dashboard-generation prompt](dashboard_generation_prompt.md). It constrains the generated frontend to the real API contract and prevents it from inventing a lift recommendation or 3D geometry that the API cannot provide.
 
-The API does not serve a frontend, authenticate users, or provide a production deployment. It binds to localhost by default. Do not expose it publicly or send confidential well data over an unauthenticated connection. Before cloud deployment, add HTTPS, authentication/authorization, per-user data isolation, request limits, logging policy, persistent model storage, and infrastructure secret management. Only bind to `0.0.0.0` behind those controls.
+The local API binds to localhost and defaults to no authentication. The root Dockerfile builds the React frontend into the FastAPI image and enables a shared HTTP Basic password gate that fails closed when `APP_PASSWORD` is missing or shorter than 20 characters; configure that value as a platform Secret, never in source or a `VITE_*` variable. A shared password is only a small-group test barrier, not individual identity, authorization, or per-user data isolation. No public deployment has been created. Before broader production use, add/verify HTTPS, user isolation, privacy-safe logging and model/data lifecycle controls. Uploads are bounded at 25 MB and 100,000 parsed rows, but those limits do not replace access control or a privacy review.
 
 ## Artificial-lift scope
 

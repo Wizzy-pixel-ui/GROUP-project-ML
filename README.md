@@ -1,8 +1,18 @@
+---
+title: GROUP Project ML
+colorFrom: blue
+colorTo: gray
+sdk: docker
+app_port: 7860
+license: mit
+short_description: Research prototype for well production history analysis
+---
+
 # GROUP Project ML: Predicting Natural-Flow Decline and Planning Artificial Lift
 
 We are building a machine-learning workflow to study when a well’s natural flow may no longer meet an agreed production requirement. Our longer-term goal is to use production and reservoir history to help engineers assess artificial-lift timing and compare feasible lift options.
 
-We want to be clear about what we have today: this repository is a research prototype. It can load and analyze tabular well data through Python notebooks and a FastAPI backend, forecast selected production and pressure targets, and compare several models. We have started the web interface with a routed dashboard shell, API health/capability checks, and session-only API settings. The upload workflow, analysis charts, ML forms, and engineering calculations are still being built. The project does **not** yet identify a validated natural-flow transition or recommend an artificial-lift method. We explain below what is ready, what is still in progress, and what evidence we need before answering lift-selection questions responsibly.
+We want to be clear about what we have today: this repository is a research prototype. Alongside the notebooks and FastAPI service, the responsive dashboard can map and preview a well-history upload, analyze the submitted data, chart API-returned production/pressure results, train the current HGB baseline, and export CSV/JSON. An optional, attributed Volve sample lets us exercise the field-data workflow. The project does **not** yet identify a validated natural-flow transition, solve IPR/VLP/nodal behavior, or recommend an artificial-lift method. We explain what is ready and what evidence is still required before answering lift-selection questions responsibly.
 
 ## Contents
 
@@ -40,7 +50,7 @@ The code we have now is the foundation for that work: tabular loading, column ma
 | 5. Pretrained time-series comparison | Optional zero-shot Amazon Chronos-2 and Chronos-Bolt-Small forecasts | We wanted to see whether general pretrained time-series models offered a useful comparison without training their weights on this small field subset. | They are general-purpose models, not petroleum models. Their performance on one Volve well is not evidence of broad transfer. |
 | 6. Arps decline comparison | Exponential, harmonic, and hyperbolic Arps curves, selected by AICc using the training history only | Arps is a familiar engineering decline baseline. It lets us compare a fitted decline trend with the data-driven and pretrained forecasts. | It models positive producing-rate decline. It does not model shut-ins, restarts, lift transitions, pressure support, or a recommended lift method. |
 | 7. FastAPI backend | JSON and file-upload routes for Arps analysis; optional HGB training on a supplied multiwell dataset; chart-ready response data | We wanted a stable interface an interactive dashboard can call without embedding model code in the browser. | It is an API, not a dashboard. HGB models live in server memory, and no route recommends artificial lift. |
-| 8. First frontend increment | React/TypeScript/Vite shell, responsive navigation, live API health/capability reads, and session-only API-origin setting | We needed a safe, honest application foundation in the same repository before wiring in data uploads and model workflows. | This is not yet a functioning dataset/analysis dashboard. Feature routes are explicitly marked as unavailable or in progress until their API-backed workflows are implemented. |
+| 8. Interactive dashboard | React/TypeScript/Vite client with a mapped-file intake/preview flow, actual API-backed production and pressure views, per-well results, HGB training/inference, and JSON/CSV exports | We wanted our group to test real field and project data on mobile/desktop instead of relying on notebook-only workflows. | These are research analytics, not a validated natural-flow transition or artificial-lift selector. IPR/VLP/nodal work and 3D remain unavailable. |
 
 We keep the synthetic and real-field experiments separate. We do not combine their scores into one accuracy number.
 
@@ -174,7 +184,7 @@ sgd-api
 
 By default, the server listens only on `127.0.0.1:8000`. Open [`http://127.0.0.1:8000/docs`](http://127.0.0.1:8000/docs) for Swagger and [`docs/api_guide.md`](docs/api_guide.md) for request and response examples. The package can also be installed with `pip install "git+https://github.com/Wizzy-pixel-ui/GROUP-project-ML.git"`; it has **not** been released to PyPI.
 
-### Run the first frontend shell
+### Run the interactive frontend dashboard
 
 The frontend runs separately from FastAPI. In one terminal, start the backend using the command above. In a second terminal, run:
 
@@ -185,11 +195,12 @@ pnpm install
 pnpm dev
 ```
 
-Open the Vite URL printed in the terminal, normally `http://127.0.0.1:5173`. The current shell checks `/health` and `/v1/capabilities`; the other sections accurately identify what is still being implemented. For frontend tests, type checking, setup details, and the security boundary, see [`frontend/README.md`](frontend/README.md). Do not expose the unauthenticated API or upload confidential well histories to a public endpoint.
+Open the Vite URL printed in the terminal, normally `http://127.0.0.1:5173`. Dataset Management supports the API's CSV/XLS/XLSX/Parquet/JSON intake, editable header mapping, preview and data-quality checks. An optional documented Volve sample lets us exercise a real field-history upload. Production, pressure context, natural-flow observed-rule, HGB training/inference and CSV/JSON output use the actual backend responses. See [`frontend/README.md`](frontend/README.md) for the workflow and detailed limits. Do not expose the local unauthenticated API or upload confidential well histories to an untrusted endpoint.
 
 | Endpoint | What it does |
 |---|---|
 | `GET /health`, `GET /v1/capabilities` | Check service status and list available features. |
+| `POST /v1/preview/upload` | Preview and report schema, missing values, numeric/date issues, duplicates, and observed sampling-gap diagnostics before analysis. |
 | `POST /v1/analyze` or `POST /v1/analyze/upload` | Submit one or more well histories as JSON or a supported tabular file. Returns history, an Arps and persistence curve, rate-trend summaries, and an observed threshold check. |
 | `POST /v1/models/train` or `POST /v1/models/train/upload` | Train the current HistGradientBoosting model from a multiwell training set and return a single held-out-well validation summary. Requires at least four wells after exclusions. |
 | `GET /v1/models/{model_id}` | Retrieve metadata for an HGB model still held in this API process. |
@@ -198,7 +209,7 @@ Pass `model_id` to `/v1/analyze` to include a fixed-horizon HGB prediction. Excl
 
 Analysis responses contain arrays the frontend can plot directly. The API currently returns `three_d_available: false`: 3D well/reservoir animation needs well-survey coordinates, completion trajectory, and reservoir surfaces, none of which are included in our current inputs. The API also returns `artificial_lift.status = "not_implemented"` and `recommendation = null`; it does not recommend a lift method.
 
-This backend has no authentication and is intended for local development. Do not expose it to the public internet or submit confidential data until authentication, HTTPS, access controls, request limits, privacy safeguards, and persistent model storage have been added. Project code is licensed under MIT; see [`LICENSE`](LICENSE). That license does not replace or change the separate terms for Volve data.
+The local backend defaults to no authentication and binds to localhost. The Docker image enables the server-side shared HTTP Basic password gate, which requires a deployment-only `APP_PASSWORD` secret of at least 20 characters; it is a limited group test gate, not multi-user identity, authorization, or data isolation. A temporary sandbox-hosted, HTTPS password-gated preview is available for group testing, but it may expire with the session and is not a persistent Hugging Face Space. A durable hosted service still requires an eligible platform plan, request/resource controls, privacy-safe logging and model/data lifecycle review. Project code is MIT-licensed; see [`LICENSE`](LICENSE). That license does not replace or change the separate terms for Volve data.
 
 ## What information we need for an artificial-lift assessment
 
