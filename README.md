@@ -1,13 +1,3 @@
----
-title: GROUP Project ML
-colorFrom: blue
-colorTo: gray
-sdk: docker
-app_port: 7860
-license: mit
-short_description: Research prototype for well production history analysis
----
-
 # GROUP Project ML: Predicting Natural-Flow Decline and Planning Artificial Lift
 
 We are building a machine-learning workflow to study when a well’s natural flow may no longer meet an agreed production requirement. Our longer-term goal is to use production and reservoir history to help engineers assess artificial-lift timing and compare feasible lift options.
@@ -96,7 +86,7 @@ For the future solution-gas-drive task, we should retain both the raw source fil
 
 ## How to run it with our own well data
 
-The web app is only at its first shell stage; it does not yet provide a working upload-to-analysis or interactive question-and-answer flow. In the notebook workflow, point `DATA_PATH` at your file and run the cells from top to bottom. The FastAPI backend also provides a file-upload endpoint for dashboard clients; see [FastAPI for a dashboard](#fastapi-for-a-dashboard), [frontend setup](frontend/README.md), and the [API guide](docs/api_guide.md). The first notebook is the general pipeline demonstration; the second is specialized to the Volve workbook.
+The dashboard now provides a working upload → preview/mapping → validation → analysis flow, API-backed charts/tables, HGB training and inference, and CSV/JSON exports. The live password-protected test website is [group-project-ml-dashboard.onrender.com](https://group-project-ml-dashboard.onrender.com); see the [Render deployment guide](docs/render_free_deployment.md) for login, free-tier behavior, verification, and limitations. To run the project locally, point `DATA_PATH` at your file and run the notebook cells from top to bottom. The first notebook is the general pipeline demonstration; the second is specialized to the Volve workbook.
 
 ### 1. Install the project
 
@@ -195,7 +185,11 @@ pnpm install
 pnpm dev
 ```
 
-Open the Vite URL printed in the terminal, normally `http://127.0.0.1:5173`. Dataset Management supports the API's CSV/XLS/XLSX/Parquet/JSON intake, editable header mapping, preview and data-quality checks. An optional documented Volve sample lets us exercise a real field-history upload. Production, pressure context, natural-flow observed-rule, HGB training/inference and CSV/JSON output use the actual backend responses. See [`frontend/README.md`](frontend/README.md) for the workflow and detailed limits. Do not expose the local unauthenticated API or upload confidential well histories to an untrusted endpoint.
+Open the Vite URL printed in the terminal, normally `http://127.0.0.1:5173`. Dataset Management supports the API's CSV/XLS/XLSX/Parquet/JSON intake, editable header mapping, preview and data-quality checks. An optional documented Volve sample lets us exercise real field history. Production, pressure context, observed natural-flow rules, HGB training/inference and CSV/JSON output use actual backend responses. See [`frontend/README.md`](frontend/README.md) for the workflow. Do not expose the local unauthenticated API or upload confidential well histories to an untrusted endpoint.
+
+### Hosted test website (Render Free)
+
+The permanent group-test URL is [https://group-project-ml-dashboard.onrender.com](https://group-project-ml-dashboard.onrender.com). The browser requests the shared HTTP Basic login; the username is `group`, and the password is stored as a Render Secret and shared separately with the group. Render Free services sleep after idle and may take about a minute to wake. The site is for research testing only: do not upload confidential well data. Its authentication is one shared password, not individual accounts or per-user data isolation.
 
 | Endpoint | What it does |
 |---|---|
@@ -209,7 +203,7 @@ Pass `model_id` to `/v1/analyze` to include a fixed-horizon HGB prediction. Excl
 
 Analysis responses contain arrays the frontend can plot directly. The API currently returns `three_d_available: false`: 3D well/reservoir animation needs well-survey coordinates, completion trajectory, and reservoir surfaces, none of which are included in our current inputs. The API also returns `artificial_lift.status = "not_implemented"` and `recommendation = null`; it does not recommend a lift method.
 
-The local backend defaults to no authentication and binds to localhost. The Docker image enables the server-side shared HTTP Basic password gate, which requires a deployment-only `APP_PASSWORD` secret of at least 20 characters; it is a limited group test gate, not multi-user identity, authorization, or data isolation. A temporary sandbox-hosted, HTTPS password-gated preview is available for group testing, but it may expire with the session and is not a persistent Hugging Face Space. A durable hosted service still requires an eligible platform plan, request/resource controls, privacy-safe logging and model/data lifecycle review. Project code is MIT-licensed; see [`LICENSE`](LICENSE). That license does not replace or change the separate terms for Volve data.
+The local backend defaults to no authentication and binds to localhost. The Docker image enables a server-side shared HTTP Basic password gate and fails closed without a deployment-only `APP_PASSWORD` secret of at least 20 characters. The live Render Free service is a password-protected group test deployment, not a production system: it has no named users or per-user data isolation, sleeps when idle, and keeps uploads and the HGB model registry only in process memory. Do not submit confidential or regulated well histories. Deployment details are in [`docs/render_free_deployment.md`](docs/render_free_deployment.md). Project code is MIT-licensed; see [`LICENSE`](LICENSE). That license does not replace or change the separate terms for Volve data.
 
 ## What information we need for an artificial-lift assessment
 
@@ -294,7 +288,7 @@ The earlier one-step Volve benchmarks tell a related but separate story: HGB’s
 ├── notebooks/
 │   ├── 01_natural_flow_adequacy_baseline.ipynb
 │   └── 02_volve_real_field_benchmark.ipynb
-├── frontend/                 # React/Vite shell; data workflows are in progress
+├── frontend/                 # React/TypeScript dashboard and API-backed workflows
 │   ├── src/
 │   ├── public/manus-routes.json
 │   ├── package.json
@@ -323,7 +317,7 @@ The earlier one-step Volve benchmarks tell a related but separate story: HGB’s
 
 - We do not have a field-validated classifier or time-to-event model for natural-flow inadequacy.
 - We do not have a confirmed set of solution-gas-drive wells with dated natural-flow-to-lift transitions and censored histories.
-- We do not yet have a complete dashboard or interactive assistant. The current frontend is a shell with live API status and clearly marked feature pages; upload preview, analysis charts, training/prediction forms, and engineering questions remain to be implemented. The API has file-upload endpoints, but it does not return a lift recommendation.
+- The dashboard supports upload, preview/mapping, validation, production and measured-pressure views, threshold observations, HGB training/inference, and JSON/CSV export. We do not have an interactive engineering assistant, field-validated transition model, or lift recommendation; those remain future work.
 - We do not rank ESP, gas lift, rod pump, PCP, hydraulic lift, or other systems. No such model has been trained or tested here.
 - We do not automatically convert units, infer arbitrary vendor headers, verify regular cadence, identify a drive mechanism, or infer lift status. The API rejects duplicate well/date rows; it does not resolve or aggregate them for us.
 - Chronos models are optional generic forecasts; their weights are downloaded when used and are not stored in this repository.
@@ -340,13 +334,12 @@ This is a public repository. **Do not place confidential company data here or co
 
 ## Our next steps
 
-1. Finish the frontend data-intake flow: upload, preview, explicit column mapping, data-quality warnings, and API-backed analysis; then display returned series and metrics without inventing them.
+1. Complete mobile/desktop visual review and test the live dashboard on representative devices and realistic network conditions.
 2. Agree on a measurable definition of inadequate natural flow, including rate units, duration, and decision horizon.
 3. Obtain field histories with verified solution-gas-drive classification, natural-flow/lift status over time, transition dates, interventions, and end-of-observation/censoring information.
-4. Add a robust data-intake and validation layer that produces a mapping/unit/missingness report before modeling; keep source-specific adapters separate from the canonical format.
-5. Benchmark simple engineering and statistical baselines on repeated well-held-out and time-held-out datasets. Report uncertainty and calibration, not just point errors.
-6. Build and validate time-to-inadequacy estimates only after event labels are adequate.
-7. Add a separate engineering feasibility and economics workflow for lift screening, with explicit constraints, traceable reasons, uncertainty, and engineer review. Do not label that output an automated recommendation until it has been evaluated against real outcomes.
+4. Benchmark engineering and statistical baselines on repeated well-held-out and time-held-out datasets. Report uncertainty and calibration, not just point errors.
+5. Build and validate time-to-inadequacy estimates only after event labels are adequate.
+6. Add a separate engineering feasibility and economics workflow for lift screening, with explicit constraints, traceable reasons, uncertainty, and engineer review. Do not label that output an automated recommendation until it has been evaluated against real outcomes.
 
 ## References and contribution notes
 

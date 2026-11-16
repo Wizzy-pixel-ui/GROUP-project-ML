@@ -2,7 +2,7 @@
 
 - **Repository:** `Wizzy-pixel-ui/GROUP-project-ML`
 - **Starting commit:** `dfb6e97`
-- **Product type:** Local-first petroleum production and lift-screening dashboard integrated with the repository’s FastAPI service; any public or multi-user deployment is gated on data, engineering validation, and security requirements.
+- **Product type:** Petroleum production research dashboard integrated with the repository’s FastAPI service; local development remains supported, and a password-protected Render Free instance is live for non-confidential group testing. Production or multi-user use remains gated on data, engineering validation, and stronger security.
 
 ## Product goal and boundary
 
@@ -26,9 +26,9 @@ Initial implementation is for local development against a separately running Fas
 
 A deployable production arrangement is a later architecture decision: it requires a secured, publicly reachable Python API, user authentication/authorization and per-user data isolation, protected file/model storage, HTTPS, request limits, and an approved data lifecycle. A static frontend by itself does not make the existing API secure or publicly reachable.
 
-#### Approved constrained test deployment (2026-11-15)
+#### Approved constrained test deployment (2026-11-15–16)
 
-The user approved a password-protected full-stack test deployment and selected Hugging Face. This limited scope uses one shared HTTP Basic password held only as a Space Secret, requires HTTPS, gates the frontend and API, rejects deployment access when the password is missing or shorter than 20 characters, and keeps uploaded request data in memory. It is not individual authentication, account authorization, per-user isolation, durable storage, or a production-security review. Hugging Face documentation currently requires a paid plan to create a Docker Space; no paid plan is authorized. The deployment must not be created until account-plan eligibility and any cost are explicitly approved. The app must continue to state that IPR/VLP/nodal analysis, validated natural-flow transition prediction, artificial-lift recommendations, and true 3D are not implemented.
+The user initially selected Hugging Face, then chose Render Free after the available Hugging Face account could not create a Docker Space without a paid plan. The full-stack Render service is live at [group-project-ml-dashboard.onrender.com](https://group-project-ml-dashboard.onrender.com), on the Free plan, with HTTPS and one shared HTTP Basic password held only in Render environment secrets. It gates the frontend and API and fails closed if the secret is missing or shorter than 20 characters; uploaded request data is handled in memory. The live URL, login behavior, Free-tier sleep/resource limits, and verification results are recorded in `docs/render_free_deployment.md`. This is not individual authentication, account authorization, per-user isolation, durable storage, or a production-security review. Do not submit confidential well data. The app must continue to state that IPR/VLP/nodal analysis, validated natural-flow transition prediction, artificial-lift recommendations, and true 3D are not implemented.
 
 ## Navigation and outcomes
 
@@ -98,7 +98,7 @@ Add reproducible exports/reports with data provenance, assumptions and limitatio
 
 ### Phase 8 — end-to-end QA, security, and deployment preparation
 
-Run existing Python tests and new frontend/type/lint/API integration checks. Define a production API deployment only after authentication, authorization, HTTPS, user isolation, rate limits, privacy-safe logging, and model/file persistence are implemented. Then write deployment documentation and verify the built frontend against that secured API. No public deploy is part of this plan until approved.
+Run existing Python tests and new frontend/type/lint/API integration checks. The approved Render Free deployment is a constrained group test, not a production deployment. Before production or multi-user hosting, implement and review stronger identity/access control, per-user isolation, privacy-safe logging, durable model/file lifecycle, and operational limits. Keep the deployment documentation current and verify each released build against the live API.
 
 ## Project structure
 

@@ -1,6 +1,6 @@
 # GROUP Project ML — dashboard frontend
 
-This React/TypeScript/Vite client connects to the repository's FastAPI service; Python remains the source of model calculations. The dashboard reads actual API responses and does not fill charts with demo values. A real Volve producer-history sample is included as an optional, attributed file for trying the workflow.
+This React/TypeScript/Vite client connects to the repository's FastAPI service; Python remains the source of model calculations. The dashboard reads actual API responses and does not fill charts with demo values. A real Volve producer-history sample is included as an optional, attributed file for trying the workflow. The live password-protected group test is at [group-project-ml-dashboard.onrender.com](https://group-project-ml-dashboard.onrender.com); its deployment behavior and login notes are documented in [`../docs/render_free_deployment.md`](../docs/render_free_deployment.md).
 
 ## Run locally
 
@@ -29,7 +29,7 @@ pnpm dev
 
 Open the Vite URL printed in the terminal, normally `http://127.0.0.1:5173`. Local development origins on port 5173 are included in the API's CORS defaults. If the API runs elsewhere, set `VITE_SGD_API_BASE_URL` in `frontend/.env.local`, or change the API origin in Settings for the current browser session. Never put credentials or secrets in a `VITE_*` variable.
 
-The production frontend uses same-origin API requests. The root Dockerfile enables the server-side shared HTTP Basic password gate by default and expects a deployment Secret named `APP_PASSWORD` (minimum 20 characters); the password must never be added to this repository or frontend environment. A shared password is only a test gate, not individual accounts or per-user data isolation. A temporary HTTPS sandbox preview is available, but it may expire with this session. A persistent Hugging Face Space remains blocked until the account has an eligible plan.
+The production frontend uses same-origin API requests. The root Dockerfile enables the server-side shared HTTP Basic password gate by default and expects a deployment Secret named `APP_PASSWORD` (minimum 20 characters); the password must never be added to this repository or frontend environment. A shared password is only a test gate, not individual accounts or per-user data isolation. The current host is Render Free: the stable URL sleeps after 15 minutes idle, may take about a minute to wake, and is not suitable for confidential or regulated well data. See the deployment guide for current limits and verified behavior.
 
 ## Interactive workflow
 

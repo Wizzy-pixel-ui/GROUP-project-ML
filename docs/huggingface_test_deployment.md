@@ -1,4 +1,6 @@
-# Hugging Face test deployment
+# Hugging Face deployment option (superseded)
+
+> **This is a historical alternative, not the current deployment.** The group selected Render Free instead. The live password-protected test app is [group-project-ml-dashboard.onrender.com](https://group-project-ml-dashboard.onrender.com); see [`render_free_deployment.md`](render_free_deployment.md) for current login, status, and platform limits. No Hugging Face Space was created.
 
 This deployment arrangement packages the React dashboard and FastAPI API into one Docker Space. The browser and API share the same HTTPS origin; uploaded production tables are processed in request memory, and model objects remain in the API process memory. No database or durable upload store is configured.
 
@@ -14,7 +16,7 @@ Basic authentication is handled by the browser. When prompted, enter username `g
 
 The repository root contains `Dockerfile` and Hugging Face Docker Space metadata in the README. The Docker image uses Node 22 to build `frontend/`, installs the Python project from `pyproject.toml`, and serves the SPA and API on port 7860. Deployment artifacts exclude local datasets and notebooks from the image build context.
 
-As of the documentation check on 2026-11-15, Hugging Face states that Docker Spaces run on compute and require a paid plan to create; a free personal account cannot create this full-stack Docker Space. Static Spaces are available free, but they cannot run this FastAPI service. The connected account currently has no Pro plan. No paid plan or service has been purchased or started. The Space must therefore remain undeployed until the account owner explicitly chooses a paid Hugging Face plan or approves a different host. The repository is already public, so a Space built from this repository would expose its source code and any committed files regardless of the runtime password.
+As checked on 2026-11-15, Hugging Face reported that this Docker Space required a paid plan on the connected account. The user selected Render Free as the alternative, so this Space remains undeployed. The repository is public, so any future Space built from it would expose its source code and committed files regardless of the runtime password.
 
 To deploy once eligible:
 
@@ -25,7 +27,7 @@ To deploy once eligible:
 
 ## Engineering scope presented to testers
 
-The app is a research prototype for well-history analysis. It fits Arps exponential, harmonic, and hyperbolic decline curves and includes an optional HistGradientBoosting model workflow. The current UI shell does not yet implement the planned upload/chart screens. The API does not calculate IPR/VLP or nodal operating points, predict a validated natural-flow transition or pressure forecast, or recommend artificial lift. Three-dimensional reservoir geometry is not available. Forecasts are not calibrated transition probabilities or operating advice. Do not use the test app to make production or equipment decisions.
+The app is a research prototype for well-history analysis. Its dashboard supports upload, preview/mapping, data validation, API-backed charts/tables, Arps and persistence scenarios, the existing HistGradientBoosting workflow, and CSV/JSON exports. The API does not calculate IPR/VLP or nodal operating points, forecast pressure, predict a validated natural-flow transition, or recommend artificial lift. Three-dimensional reservoir geometry is not available. Forecasts are not calibrated transition probabilities or operating advice. Do not use the test app to make production or equipment decisions.
 
 ## Sources
 

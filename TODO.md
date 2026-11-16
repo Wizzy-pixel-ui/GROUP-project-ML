@@ -69,23 +69,24 @@ This tracker preserves the approved plan's user-facing outcomes and concrete req
 - [x] Do not deploy the unauthenticated API or dashboard publicly in this increment; public deployment remains gated on auth, access control, HTTPS, user isolation, protected storage, rate/resource limits, privacy-safe logging and model/file lifecycle.
 - [x] Check the exact diff and push this increment to the existing authorized public repository. No deployment is claimed in this increment.
 
-## 8. Password-protected test deployment — blocked on hosting-plan authorization
+## 8. Password-protected test deployment — live on Render Free; production hardening not included
 
-- [x] Add a same-origin Docker deployment definition that builds the React application and runs FastAPI on Hugging Face's configured port.
+- [x] Add a same-origin Docker deployment definition that builds the React application and runs FastAPI on the host-provided port.
 - [x] Add an HTTP Basic password gate for all routes, require a 20-character minimum server-side secret, fail closed when the secret is absent, and mark protected responses `no-store`.
 - [x] Add authentication tests and document secret handling, the shared-credential limitation, supported prototype features, and engineering exclusions.
-- [x] Run backend/frontend suites and production build; direct local auth/preview/API checks are covered by tests and the real Volve API integration check.
-- [ ] Create a Hugging Face Docker Space only after the account owner authorizes an eligible paid plan. Current official documentation says Docker Spaces require a paid plan to create; the connected account is not Pro. Do not create a paid resource or claim a public URL before authorization and a successful health/capability check.
-- [ ] Set `APP_PASSWORD` as a Hugging Face Space Secret (never a public variable or repository file), deploy, and verify the authentication prompt and protected API over HTTPS.
-- [ ] Do not describe the shared Basic password as per-user authorization or production-grade isolation. No private well files should be submitted to this public research test.
+- [x] Run backend/frontend suites and production build; authenticate the live Render root, assets, health/capability API, and sample upload/analysis over HTTPS.
+- [x] Deploy on Render Free from the public `main` branch, configure the runtime password as a Render secret, and verify anonymous and incorrect credentials are rejected.
+- [x] Document the stable test URL, mobile login, free-tier sleep/usage behavior, exact live verification, data handling, and non-production security boundary.
+- [ ] Complete visual/accessibility QA on representative desktop and mobile browsers and document any remaining defects.
+- [ ] Do not describe the shared Basic password as per-user authorization or production-grade isolation. Do not submit private or regulated well data to the shared public test.
 
 ## Current progress
 
 - Repository assessment is in `docs/technical_assessment.md`; lift methodology is in `docs/artificial_lift_selection_methodology.md`; the approved phased plan is in `plan.md`.
 - The dashboard now supports a 5-format upload workflow, source-column mapping, units, validation, rate/pressure charts and tables, per-well summaries, threshold observations, HGB training/inference, and JSON/CSV exports. The bundled Volve file is real field production history with source attribution, not transition-label evidence.
 - The upload-preview API reports missing fields, invalid dates/rates, duplicate well/date rows, and observed day gaps; it reads in memory, does not repair values, and enforces byte/row limits.
-- Backend tests pass (14); frontend strict typecheck and 9 UI/API tests pass. A real TestClient run previewed 9,143 Volve rows and analyzed six producer wells (9,143 rows, 18 three-month forecast points); pressure history was present for five. Production build succeeded; mobile/browser visual review remains open.
-- No Hugging Face Space has been created. The Docker image requires a runtime password Secret, but Hugging Face hosting is blocked on the account's current plan; no paid resource or reusable deployment password was created. A separate temporary sandbox preview is password-gated and may expire with this session; its credential is kept out of the repository.
-- Hugging Face account status was checked: authenticated as `WizzyKeli`, not Pro. Official current docs state that Docker Spaces need a paid plan to create. The deployment remains blocked; no upgrade or paid resource was initiated.
-- Password-gated full-stack Docker files and deployment guidance are present but have not been container-built or deployed to a persistent provider. The temporary sandbox preview is running from the production frontend build and is verified to reject anonymous requests. Its auth gate is a shared group credential, not per-user access control.
-- Next: complete desktop/mobile visual review and end-to-end interface checks; then request plan authorization for Hugging Face deployment. Artificial-lift recommendations, IPR/VLP/nodal analysis, natural-flow transition prediction, and 3D remain future engineering work.
+- Backend tests pass (14); frontend strict typecheck and 9 UI/API tests pass. The production build deployed successfully to Render. Live checks confirmed anonymous/wrong-password 401 responses, authenticated page/assets/health/capabilities/sample HTTP 200 responses, and Volve preview/analysis of 9,143 rows across six wells with 18 returned forecast points for a three-month horizon.
+- Permanent password-protected test website: https://group-project-ml-dashboard.onrender.com. Deployment operations, Free-tier limits, and test details are in `docs/render_free_deployment.md`. The Render service is on the Free plan; it sleeps after 15 minutes idle. It is a stable test URL, not a production guarantee or confidential-data environment.
+- Hugging Face was not used: the available account could not create the selected Docker Space without a paid plan, so the user chose Render Free instead. No Hugging Face Space or paid plan was created.
+- The shared HTTP Basic credential is server-side only and does not provide per-user access control. Uploaded histories and HGB models remain memory-only. Mobile/desktop visual review remains open. Artificial-lift recommendations, IPR/VLP/nodal analysis, natural-flow transition prediction, and 3D remain future engineering work.
+- Next: perform responsive/browser QA and continue data/engineering validation; do not present this research-test app as an operating recommendation system.
