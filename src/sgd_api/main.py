@@ -393,10 +393,16 @@ def model_info(model_id: str) -> dict[str, Any]:
     }
 
 
-_FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+_FRONTEND_DIST = Path(os.getenv("SGD_FRONTEND_DIST", "/app/frontend/dist"))
+if not _FRONTEND_DIST.is_dir():
+    _FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 if _FRONTEND_DIST.is_dir():
     if (_FRONTEND_DIST / "assets").is_dir():
         app.mount("/assets", StaticFiles(directory=_FRONTEND_DIST / "assets"), name="frontend-assets")
+
+    @app.get("/", include_in_schema=False)
+    def frontend_root():
+        return FileResponse(_FRONTEND_DIST / "index.html")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def frontend_routes(full_path: str):
