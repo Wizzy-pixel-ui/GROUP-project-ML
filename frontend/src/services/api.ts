@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { CapabilitiesResponse, HealthResponse } from "../types/api";
 import type { AnalysisResponse, TrainingResponse, UploadPreview } from "../types/analysis";
+import type { LiftScreeningRequest, LiftScreeningResponse } from "../types/liftScreening";
 
 const API_BASE_KEY = "sgd.apiBaseUrl";
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
@@ -39,6 +40,11 @@ export function saveApiBaseUrl(value: string): void {
 }
 
 const client = axios.create({ timeout: 120_000 });
+
+export async function screenArtificialLift(request: LiftScreeningRequest): Promise<LiftScreeningResponse> {
+  const response = await client.post<LiftScreeningResponse>(`${getApiBaseUrl()}/v1/lift-screening`, request);
+  return response.data;
+}
 
 export interface AnalysisSettings {
   units: Record<string, string>;

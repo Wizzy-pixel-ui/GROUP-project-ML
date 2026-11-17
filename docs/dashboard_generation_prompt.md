@@ -1,5 +1,7 @@
 # Copyable Prompt for a Dashboard-Generating AI Agent
 
+> Historical starting prompt. A working React dashboard now exists in `frontend/`; use `docs/api_guide.md` and the current source as authoritative. The separate `/v1/lift-screening` route provides only an input-driven preliminary screen, not a final recommendation.
+
 Copy the prompt below into the AI coding agent you plan to use. Keep the API guide and OpenAPI page available to that agent as the source of truth.
 
 ---
@@ -30,7 +32,7 @@ Build a responsive, accessible web dashboard for our **GROUP Project ML** well-p
 4. Show the `trend` metrics and `arps_fit` parameters with short explanations. Label the Arps AICc as a model-fit diagnostic, not forecast accuracy.
 5. Show `threshold_check.status`, its configured rate and persistence rule, and the API’s explanatory note. Make it clear that this is an observed threshold rule, not a learned transition prediction.
 6. If `hgb_prediction` is present, show it as a single fixed-horizon point, state its `horizon_steps`, estimated date, and held-out-well validation metrics. Do not draw a multi-month HGB curve from one point.
-7. Check `artificial_lift.status` before rendering that section. The current API returns `not_implemented` and a null recommendation. Display a clear “Lift recommendation not available in this research prototype” message; do not suggest ESP, gas lift, rod pump, PCP, or any other method.
+7. Keep the per-well `artificial_lift.status` field clearly unavailable; do not treat it as a lift decision. The separate `POST /v1/lift-screening` route is available for a user-entered preliminary shortlist. If implementing it, use the exact typed request/response in the current API guide, preserve unknown values, and display per-method hard gates, positive evidence, counter-evidence, missing inputs, and next engineering checks. Do not call the result AI, a final recommendation, proof that lift is needed, an equipment design, or a substitute for IPR/VLP/nodal analysis.
 8. Check `visualizations.three_d_available`. It is currently false. Show a disabled 3D panel explaining that well survey coordinates, completion trajectory, and reservoir surfaces are required. Do not generate a fake 3D well path or reservoir animation from production rates alone.
 9. Include a research-prototype disclaimer and do not describe predictions as operational advice. Never retain or transmit uploaded files anywhere other than the API request unless the user explicitly requests and approves a secure storage design.
 

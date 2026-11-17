@@ -31,7 +31,7 @@ const navigation: NavigationItem[] = [
   { label: "Well performance", path: "/wells", icon: Activity },
   { label: "Reservoir analysis", path: "/reservoir", icon: Waves },
   { label: "Natural flow", path: "/natural-flow", icon: ChevronRight },
-  { label: "Artificial lift", path: "/artificial-lift", icon: Settings },
+  { label: "Lift screening", path: "/artificial-lift", icon: Settings },
   { label: "Machine learning", path: "/models", icon: Cpu },
   { label: "Predictions", path: "/predictions", icon: BarChart3 },
   { label: "Dataset management", path: "/datasets", icon: Database },
@@ -101,7 +101,7 @@ export function AppShell() {
           <div className="border-t border-line p-4">
             <div className="rounded-xl border border-line bg-[#111d2e] p-3">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan" /> Local research build
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan" /> Protected group test
               </div>
               <p className="mt-2 text-[11px] leading-relaxed text-slate-500">Session-only data · no individual accounts · no field persistence</p>
             </div>

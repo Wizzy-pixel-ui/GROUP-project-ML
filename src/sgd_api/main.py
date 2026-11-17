@@ -17,6 +17,8 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from sgd_api.data import REQUIRED_COLUMNS
+from sgd_api.lift_schemas import LiftScreeningRequest, LiftScreeningResponse
+from sgd_api.lift_screening import screen_artificial_lift
 from sgd_api.schemas import AnalysisRequest, AnalysisResponse, ProductionRecord, TrainingRequest, TrainingResponse
 from sgd_api.service import API_VERSION, analyze_request
 from sgd_api.training import get_model, train_hgb_model
@@ -34,8 +36,9 @@ def _cors_origins() -> list[str]:
 app = FastAPI(
     title="Solution-Gas-Drive Well Analysis API",
     description=(
-        "Research API for per-well production-history checks, Arps decline forecasts, and optional "
-        "HistGradientBoosting training/inference. It is not an artificial-lift selector."
+        "Research API for per-well production-history checks, Arps decline forecasts, optional "
+        "HistGradientBoosting training/inference, and a transparent preliminary artificial-lift screen. "
+        "It does not perform IPR/VLP or nodal analysis and does not provide a final lift recommendation."
     ),
     version=API_VERSION,
 )
@@ -200,11 +203,18 @@ def capabilities() -> dict[str, Any]:
         "optional_trainable_model": "HistGradientBoostingRegressor",
         "pressure_forecast_available": False,
         "natural_flow_transition_classifier_available": False,
+        "artificial_lift_screening_available": True,
         "artificial_lift_recommendation_available": False,
         "three_dimensional_reservoir_visualization_data_available": False,
         "model_registry": "in-memory; models are cleared when the API process restarts",
-        "disclaimer": "Research prototype. Forecasts are not calibrated transition probabilities or operating recommendations.",
+        "disclaimer": "Research prototype. Forecasts are not calibrated transition probabilities or operating recommendations. Lift output is a qualitative screening shortlist only; no final method recommendation is available.",
     }
+
+
+@app.post("/v1/lift-screening", response_model=LiftScreeningResponse, tags=["engineering"])
+def lift_screening(request: LiftScreeningRequest) -> LiftScreeningResponse:
+    """Return a qualitative, auditable candidate screen; never a final lift design."""
+    return screen_artificial_lift(request)
 
 
 @app.post("/v1/preview/upload", tags=["analysis"])

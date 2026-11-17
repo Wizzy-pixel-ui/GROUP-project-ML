@@ -70,6 +70,7 @@ const apiStatus: ApiStatusValue = {
     optional_trainable_model: "HistGradientBoostingRegressor",
     pressure_forecast_available: false,
     natural_flow_transition_classifier_available: false,
+    artificial_lift_screening_available: true,
     artificial_lift_recommendation_available: false,
     three_dimensional_reservoir_visualization_data_available: false,
     model_registry: "in-memory",

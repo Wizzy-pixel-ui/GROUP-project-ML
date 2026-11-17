@@ -11,6 +11,7 @@ export interface CapabilitiesResponse {
   optional_trainable_model: string;
   pressure_forecast_available: boolean;
   natural_flow_transition_classifier_available: boolean;
+  artificial_lift_screening_available: boolean;
   artificial_lift_recommendation_available: boolean;
   three_dimensional_reservoir_visualization_data_available: boolean;
   model_registry: string;

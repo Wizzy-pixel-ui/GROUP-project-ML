@@ -40,6 +40,7 @@ The production frontend uses same-origin API requests. The root Dockerfile enabl
 5. Review per-well production history, trend summaries, Arps fit and its AICc diagnostic, threshold status, measured pressure context, and forecast table. Select a measured variable or date window in Production Analytics. Forecast curves are shown only for oil rate.
 6. If the active file is multiwell, train the current HistGradientBoosting model in Machine Learning. Inspect its held-out-well errors against persistence, then optionally re-run the same upload with its process-local `model_id`.
 7. Export the current API result as JSON or observed/modelled history and forecast rows as CSV in Reports.
+8. In **Lift screening**, optionally copy observed rate context from the current analysis, then enter the well type, whether lift need is established by the project, qualitative application factors, trajectory/setting, and resource availability. Submit to `POST /v1/lift-screening` and review method-specific hard gates, supporting evidence, cautions, unknowns, next design checks, and the input snapshot. A declining rate alone does not establish lift need; unknowns remain unresolved.
 
 Browser state is held in memory for the current tab. The source file is sent only to the configured API origin; this frontend does not use third-party analytics or persistent app storage. Refreshing the page clears its working state. The API also does not persist uploaded histories, but an HGB model is retained in that API process until restart.
 
@@ -56,7 +57,7 @@ The sample contains 9,143 daily producer rows from six Volve wellbores (2008–2
 | Reservoir context | Submitted reservoir pressure, flowing BHP, and bubble-point measurements can be compared as dated observations when present | No PVT/material balance/drive classifier/pressure forecast/IPR/VLP/nodal operating point |
 | Natural flow | User-defined rate rule, observed status, and first sustained historical crossing when dated lift-state data support it | No learned transition timing or future natural-flow-inadequacy classifier |
 | Machine learning | Existing HistGradientBoosting oil-rate regressor, one held-out-well validation split, persistence comparison, optional point inference | Not an event/lift classifier; row-count horizon; no future operating-variable paths; in-memory model registry; validation is not a guarantee |
-| Artificial lift | Methodology documentation is available in the repository | No lift recommendations or candidate ranking are implemented |
+| Artificial lift | API-backed qualitative shortlist with explicit resource gates, per-method reasons/cautions/missing inputs, next engineering checks, and the submitted input snapshot | Preliminary screen only; not a verified need-for-lift diagnosis, IPR/VLP/nodal analysis, equipment sizing, economic comparison, trained AI, or final recommendation |
 | 3D and monitoring | Routes clearly state availability | No well trajectory, reservoir geometry, 3D animation, simulated monitoring, or instrument connection |
 | Reports | JSON and CSV downloads with units and observed/modelled labels | No PDF report or persistent report archive |
 

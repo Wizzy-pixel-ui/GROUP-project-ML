@@ -5,6 +5,8 @@
 - **Assessment date:** 11 November 2026
 - **Scope:** Read-only inspection of the checked-out `main` branch at commit `dfb6e97` before frontend or engineering-feature changes.
 
+This is a dated baseline, not a description of every later increment. The current implemented dashboard and preliminary lift-screening status are recorded in the root README, API guide, and lift methodology document.
+
 ## Executive summary
 
 The current repository is a Python research prototype. It contains a tested FastAPI service, machine-learning and decline-curve code, notebooks, synthetic demonstrations, a Volve field-data benchmark, and engineering/API documentation. It contains **no frontend application**: there is no `frontend/` directory, JavaScript/TypeScript application, Node package manifest, router, or browser build configuration.

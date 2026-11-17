@@ -42,6 +42,7 @@ def test_health_and_capabilities_routes():
 
     capabilities = client.get("/v1/capabilities").json()
     assert "Arps exponential/harmonic/hyperbolic with AICc selection" in capabilities["analysis_models"]
+    assert capabilities["artificial_lift_screening_available"] is True
     assert capabilities["artificial_lift_recommendation_available"] is False
 
 

@@ -2,7 +2,7 @@
 
 This guide describes the FastAPI service that exposes the project’s current well-history analysis to a dashboard. The API accepts canonical JSON records or uploaded tabular files, can train the existing HistGradientBoosting baseline on a user-supplied multiwell dataset, and returns chart-ready history and forecast series.
 
-**This is a research prototype, not an artificial-lift selector.** The API does not recommend ESP, gas lift, rod pump, PCP, or another lift system. The output explicitly marks lift recommendation as unavailable. The included Volve data do not identify natural-flow/lift status or transition outcomes.
+**This is a research prototype, not a final artificial-lift selector.** It now includes a separate rule-based preliminary screening endpoint for gas lift, ESP, sucker-rod pump, PCP, hydraulic lift, and gas-well plunger lift. The endpoint does not confirm that lift is needed, solve IPR/VLP or nodal analysis, calculate equipment design, or claim a validated winner. The included Volve data do not identify natural-flow/lift status or transition outcomes.
 
 ## Install and run locally
 
@@ -34,6 +34,44 @@ The project code is MIT-licensed; the included Volve data have separate source t
 | `POST /v1/models/train` | Trains HistGradientBoosting on a multiwell JSON dataset, reports one held-out-well validation split, then retains the fitted model in this API process. |
 | `POST /v1/models/train/upload` | Same training workflow from a supported tabular-file upload. |
 | `GET /v1/models/{model_id}` | Returns metadata and validation results for a model retained by the current process. |
+| `POST /v1/lift-screening` | Applies explicit method-specific resource gates and qualitative support/caution rules. Returns candidates, blockers, unknowns, evidence, next checks, and the submitted input snapshot. It is not an AI recommendation or equipment design. |
+
+### Preliminary lift-screening request
+
+The lift-screening request is JSON. Unknown/default values remain unknown; the endpoint does not infer well type, trajectory, available facilities, fluid properties, or lift-need evidence. Numeric rate/pressure fields require their corresponding unit label, are returned without conversion, and are context only—not inputs to a physical IPR/VLP calculation. Example:
+
+```json
+{
+  "well_id": "WELL-001",
+  "well_type": "oil",
+  "lift_need_state": "suspected_by_user",
+  "lift_need_evidence": "Project team suspects drawdown/facility constraint; not verified by this API",
+  "current_oil_rate": 125.4,
+  "current_liquid_rate": 143.6,
+  "target_liquid_rate": 180,
+  "liquid_rate_unit": "STB/day",
+  "reservoir_pressure": 3200,
+  "flowing_bhp": 2750,
+  "bubble_point_pressure": 2500,
+  "pressure_unit": "psi",
+  "rate_duty": "moderate",
+  "fluid_viscosity": "unknown",
+  "free_gas_fraction": "unknown",
+  "solids_loading": "low",
+  "trajectory": "deviated",
+  "setting": "onshore",
+  "electric_power": "available",
+  "injection_gas_system": "unknown",
+  "gas_handling_capacity": "available",
+  "rod_pump_access": "available",
+  "pcp_surface_drive": "available",
+  "hydraulic_power_fluid": "unavailable"
+}
+```
+
+Qualitative levels (`low`, `moderate`, `high`, `unknown`) must follow the project’s documented categories; the endpoint applies no universal numeric cutoffs. Resource fields accept `available`, `unavailable`, or `unknown`. An explicit unavailability can screen a method out of the supplied case; a missing or unknown value is never silently passed. The plunger-lift branch is considered only for a gas well with a user-stated liquid-loading concern.
+
+The response includes `method_input_status`, an input snapshot, the user's unverified lift-need state/note, each method's status/evidence/cautions/hard blocks/missing inputs/next engineering checks, general information still needed, and SPE/IPIECA source links. The optional order is based on explicit rule matches minus caution count only; there are no learned weights, model scores, probabilities, or accuracy claims. When the supplied method inputs are insufficient, the API withholds the priority rank.
 
 ### Canonical input format
 
@@ -136,6 +174,8 @@ Each analysis result includes:
 - `artificial_lift`: `status: "not_implemented"` and `recommendation: null`.
 - `visualizations`: recommended chart series. `three_d_available` is false because the source data do not contain well survey coordinates, completion trajectory, or reservoir surfaces.
 
+The per-well analysis result's `artificial_lift` field remains unimplemented; use the separate `/v1/lift-screening` endpoint for a qualitative, user-input-driven shortlist only.
+
 The API reports no calibrated transition probability or uncertainty interval. A curve crossing a rate threshold is a scenario from the fitted Arps curve, not a lift trigger.
 
 ## Dashboard integration notes
@@ -144,8 +184,8 @@ A browser dashboard can call the endpoints with `fetch` and render returned `his
 
 For a handoff to a coding assistant, use the copy-ready [dashboard-generation prompt](dashboard_generation_prompt.md). It constrains the generated frontend to the real API contract and prevents it from inventing a lift recommendation or 3D geometry that the API cannot provide.
 
-The local API binds to localhost and defaults to no authentication. The root Dockerfile builds the React frontend into the FastAPI image and enables a shared HTTP Basic password gate that fails closed when `APP_PASSWORD` is missing or shorter than 20 characters; configure that value as a platform Secret, never in source or a `VITE_*` variable. A shared password is only a small-group test barrier, not individual identity, authorization, or per-user data isolation. No public deployment has been created. Before broader production use, add/verify HTTPS, user isolation, privacy-safe logging and model/data lifecycle controls. Uploads are bounded at 25 MB and 100,000 parsed rows, but those limits do not replace access control or a privacy review.
+The local API binds to localhost and defaults to no authentication. The root Dockerfile builds the React frontend into the FastAPI image and enables a shared HTTP Basic password gate that fails closed when `APP_PASSWORD` is missing or shorter than 20 characters; configure that value as a platform Secret, never in source or a `VITE_*` variable. The password-protected Render Free group-test site is at `https://group-project-ml-dashboard.onrender.com`; it is a shared test barrier, not individual identity, authorization, or per-user data isolation. Before broader production use, add/verify HTTPS, user isolation, privacy-safe logging, and model/data lifecycle controls. Uploads are bounded at 25 MB and 100,000 parsed rows, but those limits do not replace access control or a privacy review. Do not submit confidential or regulated well data to the shared site.
 
 ## Artificial-lift scope
 
-The API can return observed rate trends, forecasts, and a transparent threshold check. It cannot decide that a well needs lift or rank ESP, gas lift, rod pump, PCP, hydraulic lift, or another method. Those decisions need verified lift-transition outcomes and engineering/facility/economic constraints such as well geometry, fluid properties, available power or gas, surface capacity, maintenance, safety, and cost. Any future lift-screening endpoint must be trained and validated separately against suitable field cases and reviewed by qualified engineers.
+The API can return observed rate trends, forecasts, and a transparent threshold check. Its new `/v1/lift-screening` route can compare qualitative feasibility evidence for ESP, gas lift, rod pump, PCP, hydraulic lift, and an applicable gas-well plunger-lift branch. It cannot establish that natural flow is inadequate, solve IPR/VLP/nodal behavior, or provide a final ranked method/equipment recommendation. Detailed PVT, measured well geometry, fluid and facility envelopes, equipment/vendor sizing, reliability, economics, and qualified engineering review are still required. A declining rate or Arps threshold crossing alone is not a lift trigger. A learned model must wait for authorized, documented method-choice and outcome data and a separate validation/review process.

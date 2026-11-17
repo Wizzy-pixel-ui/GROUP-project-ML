@@ -175,7 +175,7 @@ def _analyze_one(
     warnings = [
         "Arps is a decline-curve baseline fitted to positive-rate history; it does not model shut-ins, restarts, interventions, or lift changes.",
         "Forecasts are not calibrated probabilities and have not been validated as natural-flow transition predictions.",
-        "The artificial-lift selector is not implemented; engineering feasibility and economic review are still required.",
+        "This production-analysis route does not return a lift recommendation; use /v1/lift-screening for a qualitative preliminary shortlist. IPR/VLP, nodal analysis, detailed design, and engineering/economic review are not implemented here.",
     ]
     if threshold.status == "unknown_lift_status":
         warnings.append("Natural-flow threshold status is unknown because dated lift_active values were not supplied.")

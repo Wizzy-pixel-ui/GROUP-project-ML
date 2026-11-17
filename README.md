@@ -2,7 +2,7 @@
 
 We are building a machine-learning workflow to study when a well’s natural flow may no longer meet an agreed production requirement. Our longer-term goal is to use production and reservoir history to help engineers assess artificial-lift timing and compare feasible lift options.
 
-We want to be clear about what we have today: this repository is a research prototype. Alongside the notebooks and FastAPI service, the responsive dashboard can map and preview a well-history upload, analyze the submitted data, chart API-returned production/pressure results, train the current HGB baseline, and export CSV/JSON. An optional, attributed Volve sample lets us exercise the field-data workflow. The project does **not** yet identify a validated natural-flow transition, solve IPR/VLP/nodal behavior, or recommend an artificial-lift method. We explain what is ready and what evidence is still required before answering lift-selection questions responsibly.
+We want to be clear about what we have today: this repository is a research prototype. Alongside the notebooks and FastAPI service, the responsive dashboard can map and preview a well-history upload, analyze submitted data, chart API-returned production/pressure results, train the current HGB baseline, export CSV/JSON, and run a new input-driven, rule-based **preliminary artificial-lift screen**. An optional, attributed Volve sample lets us exercise the field-data workflow. The screen compares gas lift, ESP, sucker-rod pump, PCP, hydraulic lift, and a gas-well plunger-lift branch; it exposes unknowns, constraints, and next checks. It does **not** confirm that natural flow is inadequate, solve IPR/VLP/nodal behavior, or provide a final lift choice or equipment design.
 
 ## Contents
 
@@ -40,7 +40,8 @@ The code we have now is the foundation for that work: tabular loading, column ma
 | 5. Pretrained time-series comparison | Optional zero-shot Amazon Chronos-2 and Chronos-Bolt-Small forecasts | We wanted to see whether general pretrained time-series models offered a useful comparison without training their weights on this small field subset. | They are general-purpose models, not petroleum models. Their performance on one Volve well is not evidence of broad transfer. |
 | 6. Arps decline comparison | Exponential, harmonic, and hyperbolic Arps curves, selected by AICc using the training history only | Arps is a familiar engineering decline baseline. It lets us compare a fitted decline trend with the data-driven and pretrained forecasts. | It models positive producing-rate decline. It does not model shut-ins, restarts, lift transitions, pressure support, or a recommended lift method. |
 | 7. FastAPI backend | JSON and file-upload routes for Arps analysis; optional HGB training on a supplied multiwell dataset; chart-ready response data | We wanted a stable interface an interactive dashboard can call without embedding model code in the browser. | It is an API, not a dashboard. HGB models live in server memory, and no route recommends artificial lift. |
-| 8. Interactive dashboard | React/TypeScript/Vite client with a mapped-file intake/preview flow, actual API-backed production and pressure views, per-well results, HGB training/inference, and JSON/CSV exports | We wanted our group to test real field and project data on mobile/desktop instead of relying on notebook-only workflows. | These are research analytics, not a validated natural-flow transition or artificial-lift selector. IPR/VLP/nodal work and 3D remain unavailable. |
+| 8. Interactive dashboard | React/TypeScript/Vite client with a mapped-file intake/preview flow, actual API-backed production and pressure views, per-well results, HGB training/inference, and JSON/CSV exports | We wanted our group to test real field and project data on mobile/desktop instead of relying on notebook-only workflows. | These are research analytics, not a validated natural-flow transition predictor or final lift selector. IPR/VLP/nodal work and 3D remain unavailable. |
+| 9. Preliminary lift screen | Typed `POST /v1/lift-screening` and a mobile-responsive Lift Screening page; explicit resource gates, qualitative fit/caution rules, unknown preservation, traceable method checks, and a returned input snapshot | We needed the app to turn supplied engineering context into a visible, auditable candidate shortlist instead of implying that oil-rate decline alone selects a pump. | This is a deterministic rules screen, not AI, not an IPR/VLP/nodal calculation, not evidence that lift is needed, and not an equipment recommendation. Qualified engineering design/review is still required. |
 
 We keep the synthetic and real-field experiments separate. We do not combine their scores into one accuracy number.
 
@@ -53,12 +54,13 @@ We keep the synthetic and real-field experiments separate. We do not combine the
 | `HistGradientBoostingRegressor` | Main tabular regression baseline for fixed-horizon oil-rate and downhole-pressure targets | It can represent nonlinear relationships and works with engineered tabular features. Numeric inputs are median-imputed with missingness indicators and scaled; categorical inputs are mode-imputed and one-hot encoded. | In the Volve holdouts, the original single-step model performed worse than persistence. The longer recursive comparison is a separate experiment. |
 | Persistence | Predicts that the next rate or pressure will equal the latest observed value | A simple baseline tells us whether a more complicated method is adding value. | It is not a physical model and can fail badly after a shut-in, restart, intervention, or changing operating conditions. |
 | Arps exponential, harmonic, and hyperbolic decline | Fits positive oil-rate observations; AICc chooses among the three curve forms using the context window | It provides an interpretable decline-curve baseline against the same holdout. | A smooth decline assumption does not describe changing well operation or zero-rate periods. The fitted curve parameters need engineering review. |
+| Rule-based artificial-lift screening | Applies explicit resource blockers and qualitative method-specific support/caution rules; orders candidates only when supplied inputs provide evidence | It makes the shortlist and its evidence visible and reviewable, while keeping missing data unknown. | No learned weights, probability, accuracy claim, physical IPR/VLP/nodal calculation, verified lift-need diagnosis, vendor limits, economic optimization, or final selection. |
 | Chronos-2 and Chronos-Bolt-Small | Optional zero-shot oil-rate forecasts from pretrained Hugging Face models | They provide an external time-series comparison without field-specific fine-tuning. | They are not trained for reservoir engineering; in this test, prediction intervals were under-covered and R² was negative. |
 | MAE, RMSE, R², and interval coverage | Measures point forecast errors and checks how often observations fall inside model intervals | No single metric tells the whole story. We report errors in target units and compare with baselines. | These metrics assess the tested forecasts—not lift recommendations or future-field accuracy. There is no universal “accuracy percentage” for this regression task. |
 
 For Arps, we fit the exponential equation `q(t) = qi * exp(-Di * t)` and the hyperbolic equation `q(t) = qi / (1 + b * Di * t)^(1 / b)`. Harmonic decline is the hyperbolic special case with `b = 1`; exponential fixes `b = 0`. Time and `Di` are expressed in months in the current script. The optimizer fits positive-rate history in log-rate space with robust least squares. Zero-rate months are omitted from the fit, although they remain part of the forecast evaluation.
 
-We do **not** use a trained event classifier, survival model, neural network, or lift-selection algorithm in the current project. Some of these methods may be worth testing after we have enough correctly labeled field histories, but they are not part of the current results.
+We do **not** use a trained event classifier, survival model, neural network, or learned lift-ranking model in the current project. The dashboard’s lift page is a separate deterministic screening rule set. We intentionally do not call a free LLM to decide the engineering method: the current screen must stay reproducible, sourceable, and explicit about its gates, and a generative model would not supply validated well-specific physics or field outcomes.
 
 In the synthetic notebook, `NATURAL_FLOW_THRESHOLD = 10.0` source-rate units, `CONSECUTIVE_PERIODS = 2`, and `HORIZON = 3` monthly periods are illustrative code settings. They are there so we can see the pipeline run; they are not recommended operating limits. We must replace them with the project’s agreed units, criterion, and horizon before interpreting any output.
 
@@ -196,18 +198,19 @@ The permanent group-test URL is [https://group-project-ml-dashboard.onrender.com
 | `GET /health`, `GET /v1/capabilities` | Check service status and list available features. |
 | `POST /v1/preview/upload` | Preview and report schema, missing values, numeric/date issues, duplicates, and observed sampling-gap diagnostics before analysis. |
 | `POST /v1/analyze` or `POST /v1/analyze/upload` | Submit one or more well histories as JSON or a supported tabular file. Returns history, an Arps and persistence curve, rate-trend summaries, and an observed threshold check. |
+| `POST /v1/lift-screening` | Submit explicit well, duty, fluid, geometry, and resource inputs for a traceable preliminary shortlist; returns blockers, unknowns, cautions, evidence, and next checks—not an AI or final recommendation. |
 | `POST /v1/models/train` or `POST /v1/models/train/upload` | Train the current HistGradientBoosting model from a multiwell training set and return a single held-out-well validation summary. Requires at least four wells after exclusions. |
 | `GET /v1/models/{model_id}` | Retrieve metadata for an HGB model still held in this API process. |
 
 Pass `model_id` to `/v1/analyze` to include a fixed-horizon HGB prediction. Exclude the target well from training when testing generalization to an unseen well. `horizon_steps` counts rows, not calendar months, so it equals months only for complete monthly histories. HGB artifacts are currently in memory; they disappear on restart and are not shared between multiple worker processes.
 
-Analysis responses contain arrays the frontend can plot directly. The API currently returns `three_d_available: false`: 3D well/reservoir animation needs well-survey coordinates, completion trajectory, and reservoir surfaces, none of which are included in our current inputs. The API also returns `artificial_lift.status = "not_implemented"` and `recommendation = null`; it does not recommend a lift method.
+Analysis responses contain arrays the frontend can plot directly. The API currently returns `three_d_available: false`: 3D well/reservoir animation needs well-survey coordinates, completion trajectory, and reservoir surfaces, none of which are included in our current inputs. The per-well production-analysis result still uses `artificial_lift.status = "not_implemented"`; the separate `POST /v1/lift-screening` route returns a transparent preliminary shortlist only, not a final lift recommendation.
 
 The local backend defaults to no authentication and binds to localhost. The Docker image enables a server-side shared HTTP Basic password gate and fails closed without a deployment-only `APP_PASSWORD` secret of at least 20 characters. The live Render Free service is a password-protected group test deployment, not a production system: it has no named users or per-user data isolation, sleeps when idle, and keeps uploads and the HGB model registry only in process memory. Do not submit confidential or regulated well histories. Deployment details are in [`docs/render_free_deployment.md`](docs/render_free_deployment.md). Project code is MIT-licensed; see [`LICENSE`](LICENSE). That license does not replace or change the separate terms for Volve data.
 
 ## What information we need for an artificial-lift assessment
 
-Our notebooks and API do not ask these questions automatically. This is the information we should gather and verify before building a lift-screening feature:
+The new Lift Screening page asks for part of this context, but not enough to make a final selection. We should gather and verify the following information before acting on any screen result:
 
 | Question we need answered | Why it matters |
 |---|---|
@@ -220,7 +223,7 @@ Our notebooks and API do not ask these questions automatically. This is the info
 | Which resources and constraints are available—power, gas for gas lift, injection/flowline capacity, water handling, space, maintenance, safety, and budget? | Technical production potential may not be feasible or economic under the actual field constraints. |
 | For wells that already transitioned, what method was installed, when, why, and what happened to production, uptime, cost, and failures? | We need labeled outcomes and comparison cases to evaluate any future method-ranking model. |
 
-A future lift-assessment workflow should return a **screening result with evidence**, not a bare answer: forecast range, threshold-crossing probability/time only after it is validated, candidate methods that pass documented constraints, reasons for ruling options in or out, assumptions, uncertainty, and a clear “insufficient data / engineering review required” state. We have not built that decision-support step yet. Lift choice should not be inferred from production decline alone.
+A lift-assessment workflow must return a **screening result with evidence**, not a bare answer: candidate methods that pass documented constraints, reasons for ruling options in or out, assumptions, unknowns, next checks, and a clear “insufficient data / engineering review required” state. The current screen does this qualitatively but does not calculate a forecast-linked lift trigger or validated uncertainty. Lift choice must not be inferred from production decline alone.
 
 ## What the project returns
 
@@ -229,11 +232,11 @@ A future lift-assessment workflow should return a **screening result with eviden
 | Synthetic baseline notebook | A data-quality check, an example rule-based inadequate-flow label, fixed-horizon oil-rate predictions, held-out-well and time-split regression metrics, tables, and diagnostic charts. Synthetic results are software demonstrations only. |
 | Volve field notebook | Real-data profiles, oil-rate and downhole-pressure regression metrics, held-out-well/time comparisons, prediction tables, Chronos forecasts and intervals when the optional package is available, plus the Arps comparison and chart. |
 | `compare_arps_models.py` | `arps_model_comparison_metrics.csv`, `arps_model_comparison_predictions.csv`, `arps_model_comparison_metadata.json`, and `arps_model_comparison.png` under `reports/arps_comparison/`. |
-| FastAPI backend | JSON/file-upload analysis, chart-ready history and forecast arrays, optional HGB predictions, a transparent threshold check, and an explicit no-lift-recommendation status. |
+| FastAPI backend | JSON/file-upload analysis, chart-ready history and forecast arrays, optional HGB predictions, a transparent threshold check, and a separate preliminary lift-screening endpoint with traceable rules. |
 
-The project reports **MAE and RMSE** in the target’s source units, **R²** as context, forecast rows, and Chronos interval coverage where available. It does not report a universal “accuracy percentage,” calibrated natural-flow inadequacy probability, or recommended lift system.
+The project reports **MAE and RMSE** in the target’s source units, **R²** as context, forecast rows, and Chronos interval coverage where available. The lift screen reports neither model accuracy nor probability; it presents an evidence order only when enough supplied inputs exist, and explicitly states that it does not choose a system.
 
-Here is the current workflow, including the step we have **not** built yet:
+Here is the current workflow and the boundary around the lift screen:
 
 ```mermaid
 flowchart LR
@@ -242,7 +245,8 @@ flowchart LR
     C --> D[Create per-well history features]
     D --> E[HGB, Arps, persistence, optional Chronos]
     E --> F[Forecast tables, metrics, and charts]
-    F -. requires verified labels and engineering data .-> G[Inadequacy risk and lift screening\nnot built yet]
+    F --> G[Input-driven preliminary lift screen]
+    G -. requires IPR/VLP, detailed design, economics, and review .-> H[Operational method selection\nnot implemented]
 ```
 
 ## What the current field results tell us

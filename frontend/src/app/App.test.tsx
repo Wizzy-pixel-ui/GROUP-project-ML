@@ -57,12 +57,13 @@ describe("application shell", () => {
     expect(await screen.findByRole("heading", { name: "No natural-flow check available" })).toBeInTheDocument();
   });
 
-  it("opens the artificial-lift route and clearly labels its implementation status", async () => {
+  it("opens the preliminary artificial-lift screen and keeps the final-design boundary visible", async () => {
     renderRoute();
-    fireEvent.click(screen.getByRole("link", { name: "Artificial lift" }));
+    fireEvent.click(screen.getByRole("link", { name: "Lift screening" }));
     expect(await screen.findByRole("heading", { name: "Artificial-lift screening" })).toBeInTheDocument();
-    expect(screen.getByText("Screening engine planned · not available yet")).toBeInTheDocument();
-    expect(screen.getByText(/will not replace IPR\/VLP\/nodal analysis/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Screen lift options" })).toBeInTheDocument();
+    expect(screen.getByText(/cannot independently confirm the need for lift/i)).toBeInTheDocument();
+    expect(screen.getByText(/deterministic rule matches, not AI-generated advice/i)).toBeInTheDocument();
   });
 
   it("provides a usable session API URL setting without an auth secret field", () => {

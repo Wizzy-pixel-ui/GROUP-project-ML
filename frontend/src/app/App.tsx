@@ -11,6 +11,7 @@ const ProductionPage = lazy(() => import("../pages/ProductionPage").then((module
 const WellPerformancePage = lazy(() => import("../pages/WellPerformancePage").then((module) => ({ default: module.WellPerformancePage })));
 const ReservoirContextPage = lazy(() => import("../pages/ReservoirContextPage").then((module) => ({ default: module.ReservoirContextPage })));
 const NaturalFlowPage = lazy(() => import("../pages/NaturalFlowPage").then((module) => ({ default: module.NaturalFlowPage })));
+const ArtificialLiftPage = lazy(() => import("../pages/ArtificialLiftPage").then((module) => ({ default: module.ArtificialLiftPage })));
 const ModelsPage = lazy(() => import("../pages/ModelsPage").then((module) => ({ default: module.ModelsPage })));
 const PredictionsPage = lazy(() => import("../pages/PredictionsPage").then((module) => ({ default: module.PredictionsPage })));
 const ReportsPage = lazy(() => import("../pages/ReportsPage").then((module) => ({ default: module.ReportsPage })));
@@ -28,7 +29,7 @@ export function AppRoutes() {
         <Route path="wells" element={<LoadingRoute><WellPerformancePage /></LoadingRoute>} />
         <Route path="reservoir" element={<LoadingRoute><ReservoirContextPage /></LoadingRoute>} />
         <Route path="natural-flow" element={<LoadingRoute><NaturalFlowPage /></LoadingRoute>} />
-        <Route path="artificial-lift" element={<FeaturePlaceholderPage page="artificial-lift" />} />
+        <Route path="artificial-lift" element={<LoadingRoute><ArtificialLiftPage /></LoadingRoute>} />
         <Route path="models" element={<LoadingRoute><ModelsPage /></LoadingRoute>} />
         <Route path="predictions" element={<LoadingRoute><PredictionsPage /></LoadingRoute>} />
         <Route path="datasets" element={<LoadingRoute><DatasetManagerPage /></LoadingRoute>} />

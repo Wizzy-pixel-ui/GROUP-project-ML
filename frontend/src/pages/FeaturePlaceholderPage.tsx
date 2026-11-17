@@ -1,4 +1,4 @@
-import { ArrowRight, CircleHelp, Database, FileQuestion, ShieldAlert } from "lucide-react";
+import { ArrowRight, CircleHelp, Database, FileQuestion } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const pageInfo = {
@@ -29,13 +29,6 @@ const pageInfo = {
     status: "Rule only · no event model",
     description: "The API can report an observed threshold status when a threshold and relevant lift-state history are supplied. It does not solve well deliverability or predict a validated future transition.",
     note: "A decline in oil rate alone is not evidence that natural flow has become inadequate.",
-  },
-  "artificial-lift": {
-    title: "Artificial-lift screening",
-    eyebrow: "Engineering decision support",
-    status: "Screening engine planned · not available yet",
-    description: "The current API returns no lift recommendation. A planned Python screening engine will compare gas lift, ESP, sucker-rod pump, PCP and hydraulic lift, with a gas-well plunger-lift branch where relevant.",
-    note: "A future shortlist will show feasibility, reasons, missing inputs, assumptions and sensitivity. It will not replace IPR/VLP/nodal analysis, vendor design, facilities review or qualified engineering judgment.",
   },
   models: {
     title: "Machine-learning workspace",
@@ -85,9 +78,8 @@ export type FeaturePageKey = keyof typeof pageInfo;
 
 export function FeaturePlaceholderPage({ page }: { page: FeaturePageKey }) {
   const info = pageInfo[page];
-  const isLift = page === "artificial-lift";
   const isData = page === "datasets";
-  const Icon = isLift ? ShieldAlert : isData ? Database : FileQuestion;
+  const Icon = isData ? Database : FileQuestion;
 
   return (
     <section className="mx-auto max-w-4xl space-y-6">
@@ -103,7 +95,6 @@ export function FeaturePlaceholderPage({ page }: { page: FeaturePageKey }) {
             <h3 className="mt-4 text-lg font-semibold text-white">This page is a status view, not an implemented calculation.</h3>
             <p className="mt-3 text-sm leading-6 text-slate-400">{info.description}</p>
             <div className="mt-5 rounded-lg border border-line bg-[#0c1523] p-4 text-sm leading-6 text-slate-400">{info.note}</div>
-            {isLift && <p className="mt-4 text-xs leading-5 text-slate-500">The evidence-based screening method and candidate trade-offs are documented in <code>docs/artificial_lift_selection_methodology.md</code>.</p>}
             {page === "not-found" && <Link to="/" className="subtle-link mt-5">Return to overview <ArrowRight size={14} /></Link>}
           </div>
         </div>
