@@ -85,22 +85,22 @@ export function FeaturePlaceholderPage({ page }: { page: FeaturePageKey }) {
     <section className="mx-auto max-w-4xl space-y-6">
       <div>
         <p className="eyebrow">{info.eyebrow}</p>
-        <h2 className="mt-2 text-2xl font-semibold text-white">{info.title}</h2>
+        <h2 className="mt-2 text-2xl font-bold text-slate-900">{info.title}</h2>
       </div>
       <article className="panel-card p-6 sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-amber-300/20 bg-amber-300/10 text-amber-200"><Icon size={21} /></span>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-amber-300/20 bg-amber-300/10 text-amber-800"><Icon size={21} /></span>
           <div>
-            <span className="inline-flex rounded-full border border-amber-300/25 bg-amber-300/10 px-2.5 py-1 text-[11px] font-medium text-amber-100">{info.status}</span>
-            <h3 className="mt-4 text-lg font-semibold text-white">This page is a status view, not an implemented calculation.</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-400">{info.description}</p>
-            <div className="mt-5 rounded-lg border border-line bg-[#0c1523] p-4 text-sm leading-6 text-slate-400">{info.note}</div>
+            <span className="inline-flex rounded-full border border-amber-300/25 bg-amber-300/10 px-2.5 py-1 text-[11px] font-medium text-amber-900">{info.status}</span>
+            <h3 className="mt-4 text-lg font-bold text-slate-900">This page is a status view, not an implemented calculation.</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-500">{info.description}</p>
+            <div className="mt-5 rounded-lg border border-line bg-[#eaf0f6] p-4 text-sm leading-6 text-slate-500">{info.note}</div>
             {page === "not-found" && <Link to="/" className="subtle-link mt-5">Return to overview <ArrowRight size={14} /></Link>}
           </div>
         </div>
       </article>
-      <article className="rounded-xl border border-line/80 bg-[#0e1928] p-4 text-xs leading-5 text-slate-500">
-        <div className="flex items-start gap-2"><CircleHelp size={15} className="mt-0.5 shrink-0 text-slate-400" /><p>Do not treat a visible navigation page as evidence that a backend calculation exists. Capabilities are reported by the FastAPI service and will only be shown as available after implementation and verification.</p></div>
+      <article className="rounded-xl border border-line/80 bg-white p-4 text-xs leading-5 text-slate-500">
+        <div className="flex items-start gap-2"><CircleHelp size={15} className="mt-0.5 shrink-0 text-slate-500" /><p>Do not treat a visible navigation page as evidence that a backend calculation exists. Capabilities are reported by the FastAPI service and will only be shown as available after implementation and verification.</p></div>
       </article>
     </section>
   );

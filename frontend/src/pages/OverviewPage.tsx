@@ -4,8 +4,8 @@ import { useApiStatusContext } from "../app/apiStatusContext";
 import { useWorkspace } from "../app/workspaceContext";
 
 function StatusBadge({ label, tone }: { label: string; tone: "green" | "amber" | "slate" }) {
-  const toneClass = tone === "green" ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" : tone === "amber" ? "border-amber-300/25 bg-amber-300/10 text-amber-200" : "border-line bg-panel text-slate-300";
-  return <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium ${toneClass}`}>{label}</span>;
+  const toneClass = tone === "green" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : tone === "amber" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-white bg-surface text-slate-700 shadow-soft-sm";
+  return <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${toneClass}`}>{label}</span>;
 }
 
 export function OverviewPage() {
@@ -22,8 +22,8 @@ export function OverviewPage() {
       <section className="flex flex-col justify-between gap-5 border-b border-line pb-7 xl:flex-row xl:items-end">
         <div className="max-w-3xl">
           <p className="eyebrow">Production surveillance · research workspace</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Well analytics workspace</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+          <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Well analytics workspace</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
             Review production evidence and prototype forecasts. Results are shown only when supplied by the project API; this workspace does not invent field measurements.
           </p>
         </div>
@@ -37,8 +37,8 @@ export function OverviewPage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="eyebrow">Current session</p>
-              <h3 className="mt-2 text-lg font-semibold text-white">{results.length ? `${results.length} well${results.length === 1 ? "" : "s"} analyzed` : "No analysis loaded"}</h3>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">{results.length ? `Source: ${state.file?.name ?? "file no longer available in this session"}. Summaries below are calculated from the API response.` : "Upload a production-history table to populate well counts, latest rates, pressure history, and chart series. Files stay in this browser session and are not saved by this app."}</p>
+              <h3 className="mt-2 text-lg font-bold text-slate-900">{results.length ? `${results.length} well${results.length === 1 ? "" : "s"} analyzed` : "No analysis loaded"}</h3>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">{results.length ? `Source: ${state.file?.name ?? "file no longer available in this session"}. Summaries below are calculated from the API response.` : "Upload a production-history table to populate well counts, latest rates, pressure history, and chart series. Files stay in this browser session and are not saved by this app."}</p>
             </div>
             <StatusBadge label="Awaiting data" tone="slate" />
           </div>
@@ -47,12 +47,12 @@ export function OverviewPage() {
               { label: "Analyzed wells", value: results.length ? results.length.toLocaleString() : "—", note: results.length ? "From current API response" : "No dataset loaded" },
               { label: "Mean latest oil rate", value: meanLatestRate == null ? "—" : `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(meanLatestRate)}${documentedOilUnit ? ` ${documentedOilUnit}` : ""}`, note: results.length ? "Across analyzed wells" : "No dataset loaded" },
               { label: "History observations", value: results.length ? results.reduce((sum, result) => sum + result.row_count, 0).toLocaleString() : "—", note: results.length ? "Rows returned by API" : "No dataset loaded" },
-              { label: "Lift decision", value: results.length ? "Unavailable" : "—", note: results.length ? "Selector not implemented" : "No dataset loaded" },
+              { label: "Lift screening", value: capabilities?.artificial_lift_screening_available ? "Available" : "—", note: capabilities?.artificial_lift_screening_available ? "Input-driven preliminary screen" : "Connect API for status" },
             ].map(({ label, value, note }) => (
               <div key={label} className="metric-placeholder">
                 <span className="text-xs text-slate-500">{label}</span>
-                <span className={`mt-2 block font-mono text-xl ${results.length ? "text-slate-100" : "text-slate-500"}`}>{value}</span>
-                <span className="mt-1 block text-[10px] text-slate-600">{note}</span>
+                <span className={`mt-2 block font-mono text-xl ${results.length ? "text-slate-800" : "text-slate-500"}`}>{value}</span>
+                <span className="mt-1 block text-[10px] text-slate-500">{note}</span>
               </div>
             ))}
           </div>
@@ -62,11 +62,11 @@ export function OverviewPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="eyebrow">API service</p>
-              <h3 className="mt-2 text-lg font-semibold text-white">Connection status</h3>
+              <h3 className="mt-2 text-lg font-bold text-slate-900">Connection status</h3>
             </div>
             {connection === "connected" ? <StatusBadge label="Connected" tone="green" /> : connection === "checking" ? <StatusBadge label="Checking" tone="amber" /> : <StatusBadge label="Unavailable" tone="amber" />}
           </div>
-          <p className="mt-4 text-sm leading-6 text-slate-400">
+          <p className="mt-4 text-sm leading-6 text-slate-500">
             {connection === "connected" ? `FastAPI ${health?.api_version ?? ""} returned a healthy response.` : connection === "checking" ? "Checking the configured FastAPI origin…" : error ?? "Start the local FastAPI service or update its URL in Settings."}
           </p>
           <div className="mt-5 border-t border-line pt-4 text-xs leading-5 text-slate-500">
@@ -81,7 +81,7 @@ export function OverviewPage() {
             <span className="rounded-lg border border-cyan/20 bg-cyan/10 p-2 text-cyan"><CheckCircle2 size={17} /></span>
             <div>
               <p className="eyebrow">Available from the current API</p>
-              <h3 className="mt-1 text-base font-semibold text-white">Implemented model paths</h3>
+              <h3 className="mt-1 text-base font-bold text-slate-900">Implemented model paths</h3>
             </div>
           </div>
           {connection === "connected" && capabilities ? (
@@ -103,25 +103,25 @@ export function OverviewPage() {
 
         <article className="panel-card p-5 sm:p-6">
           <div className="flex items-start gap-3">
-            <span className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-2 text-amber-200"><ShieldAlert size={17} /></span>
+            <span className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-2 text-amber-800"><ShieldAlert size={17} /></span>
             <div>
               <p className="eyebrow">Engineering boundary</p>
-              <h3 className="mt-1 text-base font-semibold text-white">What this build does not decide</h3>
+              <h3 className="mt-1 text-base font-bold text-slate-900">What this build does not decide</h3>
             </div>
           </div>
-          <div className="mt-5 space-y-3 text-sm leading-6 text-slate-400">
-            <p>The current API does not confirm reservoir drive mechanism, solve IPR/VLP or nodal analysis, forecast pressure, predict a validated natural-flow transition, or recommend artificial lift.</p>
-            <p>Arps threshold crossing is a fitted scenario, not a lift trigger. A lift shortlist is planned as a separate, input-driven engineering screening feature.</p>
+          <div className="mt-5 space-y-3 text-sm leading-6 text-slate-500">
+            <p>Use Lift screening to compare methods against the well and facility inputs you supply. Its shortlist is a structured aid for engineering review, not a final equipment selection.</p>
+            <p>It does not solve IPR/VLP or nodal analysis, diagnose reservoir drive, or validate a future natural-flow transition. An Arps threshold crossing is a fitted scenario, not a lift trigger.</p>
           </div>
-          <Link to="/artificial-lift" className="subtle-link mt-4">Read lift screening status <ArrowRight size={14} /></Link>
+          <Link to="/artificial-lift" className="primary-action mt-4">Open lift screening <ArrowRight size={14} /></Link>
         </article>
       </section>
 
       <section className="panel-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex items-start gap-3">
-          <span className="rounded-lg border border-line bg-[#152238] p-2 text-slate-300"><CircleHelp size={17} /></span>
+          <span className="rounded-lg border border-line bg-[#eaf0f6] p-2 text-slate-700"><CircleHelp size={17} /></span>
           <div>
-            <p className="text-sm font-medium text-slate-200">{results.length ? "Current analysis is held in this tab" : "Start with a clean data contract"}</p>
+            <p className="text-sm font-medium text-slate-700">{results.length ? "Current analysis is held in this tab" : "Start with a clean data contract"}</p>
             <p className="mt-1 text-xs leading-5 text-slate-500">Required fields: well identifier, observation date, and oil rate. Units are documented—not converted—by the current API.</p>
           </div>
         </div>

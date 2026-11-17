@@ -43,10 +43,10 @@ const initialForm: LiftScreeningRequest = {
 };
 
 const candidateStatus: Record<CandidateStatus, { label: string; className: string }> = {
-  screening_candidate: { label: "No stated resource gate blocked", className: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" },
-  conditional: { label: "Conditional · verify constraints", className: "border-amber-300/30 bg-amber-300/10 text-amber-100" },
-  unknown: { label: "Insufficient method inputs", className: "border-slate-500/40 bg-slate-500/10 text-slate-300" },
-  screened_out: { label: "Screened out by stated input", className: "border-rose-400/30 bg-rose-400/10 text-rose-200" },
+  screening_candidate: { label: "No stated resource gate blocked", className: "border-emerald-400/30 bg-emerald-400/10 text-emerald-800" },
+  conditional: { label: "Conditional · verify constraints", className: "border-amber-300/30 bg-amber-300/10 text-amber-900" },
+  unknown: { label: "Insufficient method inputs", className: "border-slate-500/40 bg-slate-500/10 text-slate-700" },
+  screened_out: { label: "Screened out by stated input", className: "border-rose-400/30 bg-rose-400/10 text-rose-800" },
 };
 
 const wellTypeOptions = [
@@ -107,13 +107,13 @@ function NumberField({ label, value, unit, onChange, min = 0, step = "any" }: {
 
 function ResultList({ title, items, tone = "normal" }: { title: string; items: string[]; tone?: "normal" | "caution" | "blocked" }) {
   if (!items.length) return null;
-  const iconClass = tone === "blocked" ? "text-rose-300" : tone === "caution" ? "text-amber-200" : "text-cyan";
+  const iconClass = tone === "blocked" ? "text-rose-300" : tone === "caution" ? "text-amber-800" : "text-cyan";
   const Icon = tone === "blocked" ? X : tone === "caution" ? AlertTriangle : Check;
   return (
     <div className="mt-4">
-      <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</h4>
+      <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</h4>
       <ul className="mt-2 space-y-2">
-        {items.map((item) => <li key={item} className="flex gap-2 text-sm leading-5 text-slate-300"><Icon size={15} className={`mt-0.5 shrink-0 ${iconClass}`} /><span>{item}</span></li>)}
+        {items.map((item) => <li key={item} className="flex gap-2 text-sm leading-5 text-slate-700"><Icon size={15} className={`mt-0.5 shrink-0 ${iconClass}`} /><span>{item}</span></li>)}
       </ul>
     </div>
   );
@@ -179,17 +179,17 @@ export function ArtificialLiftPage() {
     <section className="mx-auto max-w-6xl space-y-6">
       <header>
         <p className="eyebrow">Rule-based engineering screen · version 0.1</p>
-        <h2 className="mt-2 text-2xl font-semibold text-white">Artificial-lift screening</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Enter the well-specific context and available resources. The API returns a traceable preliminary shortlist for gas lift, ESP, sucker-rod pump, PCP, hydraulic lift, and a gas-well plunger-lift branch.</p>
+        <h2 className="mt-2 text-2xl font-bold text-slate-900">Artificial-lift screening</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Enter the well-specific context and available resources. The API returns a traceable preliminary shortlist for gas lift, ESP, sucker-rod pump, PCP, hydraulic lift, and a gas-well plunger-lift branch.</p>
       </header>
 
       <div className="rounded-xl border border-amber-300/30 bg-amber-300/5 p-4 sm:p-5">
         <div className="flex gap-3">
-          <ShieldAlert size={20} className="mt-0.5 shrink-0 text-amber-200" />
+          <ShieldAlert size={20} className="mt-0.5 shrink-0 text-amber-800" />
           <div>
-            <h3 className="font-semibold text-amber-100">A screening shortlist—not “install this system”</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-300">A falling rate or Arps threshold crossing does not establish that natural flow is inadequate. IPR/VLP and nodal operating-point calculations are not implemented, so this app cannot independently confirm the need for lift. Results are deterministic rule matches, not AI-generated advice, probabilities, or validated recommendations.</p>
-            <p className="mt-2 text-xs leading-5 text-slate-400">No universal numeric cutoffs are assumed for “low/high” duty, gas, solids, or viscosity. Use your field’s documented definitions and leave unknowns as unknown.</p>
+            <h3 className="font-bold text-amber-900">A screening shortlist—not “install this system”</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-700">A falling rate or Arps threshold crossing does not establish that natural flow is inadequate. IPR/VLP and nodal operating-point calculations are not implemented, so this app cannot independently confirm the need for lift. Results are deterministic rule matches, not AI-generated advice, probabilities, or validated recommendations.</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">No universal numeric cutoffs are assumed for “low/high” duty, gas, solids, or viscosity. Use your field’s documented definitions and leave unknowns as unknown.</p>
           </div>
         </div>
       </div>
@@ -215,7 +215,7 @@ export function ArtificialLiftPage() {
 
       <form onSubmit={submit} className="space-y-5">
         <section className="panel-card space-y-4 p-4 sm:p-6">
-          <div><p className="eyebrow">01 · Case and need evidence</p><h3 className="mt-1 text-lg font-semibold text-white">Identify the well and what is known</h3></div>
+          <div><p className="eyebrow">01 · Case and need evidence</p><h3 className="mt-1 text-lg font-bold text-slate-900">Identify the well and what is known</h3></div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <label className="block space-y-1.5"><span className="field-label">Well identifier</span><input className="text-input w-full" value={form.well_id ?? ""} onChange={(event) => setField("well_id", event.target.value || null)} placeholder="e.g. WELL-01" /></label>
             <SelectField label="Well type" value={form.well_type} options={wellTypeOptions} onChange={(value) => setField("well_type", value as LiftScreeningRequest["well_type"])} />
@@ -225,7 +225,7 @@ export function ArtificialLiftPage() {
         </section>
 
         <section className="panel-card space-y-4 p-4 sm:p-6">
-          <div><p className="eyebrow">02 · Production and fluid context</p><h3 className="mt-1 text-lg font-semibold text-white">Enter observed values and project duty</h3><p className="mt-1 text-xs leading-5 text-slate-500">Numeric values are stored with the unit label you provide; they are not converted, used to rank methods, or processed by an IPR/VLP calculation. The qualitative levels are not universal operating cutoffs.</p></div>
+          <div><p className="eyebrow">02 · Production and fluid context</p><h3 className="mt-1 text-lg font-bold text-slate-900">Enter observed values and project duty</h3><p className="mt-1 text-xs leading-5 text-slate-500">Numeric values are stored with the unit label you provide; they are not converted, used to rank methods, or processed by an IPR/VLP calculation. The qualitative levels are not universal operating cutoffs.</p></div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <NumberField label="Current oil rate" value={form.current_oil_rate} unit={form.liquid_rate_unit ?? undefined} onChange={(value) => setField("current_oil_rate", value)} />
             <NumberField label="Current liquid rate" value={form.current_liquid_rate} unit={form.liquid_rate_unit ?? undefined} onChange={(value) => setField("current_liquid_rate", value)} />
@@ -240,8 +240,8 @@ export function ArtificialLiftPage() {
             <SelectField label="Free gas at/near intake" value={form.free_gas_fraction} options={levelOptions} onChange={(value) => setField("free_gas_fraction", value as LiftScreeningRequest["free_gas_fraction"])} help="If only surface GOR is known, do not treat it as intake free-gas fraction." />
             <SelectField label="Solids / sand loading" value={form.solids_loading} options={levelOptions} onChange={(value) => setField("solids_loading", value as LiftScreeningRequest["solids_loading"])} />
           </div>
-          <details className="rounded-lg border border-line bg-[#0c1523] p-3">
-            <summary className="cursor-pointer text-sm font-medium text-slate-300">Add measured pressure context (not a nodal calculation)</summary>
+          <details className="rounded-lg border border-line bg-[#eaf0f6] p-3">
+            <summary className="cursor-pointer text-sm font-medium text-slate-700">Add measured pressure context (not a nodal calculation)</summary>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <NumberField label="Reservoir pressure" value={form.reservoir_pressure} unit={form.pressure_unit ?? undefined} min={0.001} onChange={(value) => setField("reservoir_pressure", value)} />
               <NumberField label="Flowing BHP" value={form.flowing_bhp} unit={form.pressure_unit ?? undefined} min={0.001} onChange={(value) => setField("flowing_bhp", value)} />
@@ -253,7 +253,7 @@ export function ArtificialLiftPage() {
         </section>
 
         <section className="panel-card space-y-4 p-4 sm:p-6">
-          <div><p className="eyebrow">03 · Well and operating environment</p><h3 className="mt-1 text-lg font-semibold text-white">Describe geometry and application context</h3></div>
+          <div><p className="eyebrow">03 · Well and operating environment</p><h3 className="mt-1 text-lg font-bold text-slate-900">Describe geometry and application context</h3></div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <SelectField label="Well trajectory" value={form.trajectory} options={[["unknown", "Unknown / not supplied"], ["vertical", "Vertical / near-vertical"], ["deviated", "Deviated"], ["highly_deviated", "Highly deviated / horizontal"],]} onChange={(value) => setField("trajectory", value as LiftScreeningRequest["trajectory"])} />
             <SelectField label="Asset setting" value={form.setting} options={[["unknown", "Unknown / not supplied"], ["onshore", "Onshore"], ["offshore", "Offshore"], ["subsea", "Subsea"],]} onChange={(value) => setField("setting", value as LiftScreeningRequest["setting"])} />
@@ -262,7 +262,7 @@ export function ArtificialLiftPage() {
         </section>
 
         <section className="panel-card space-y-4 p-4 sm:p-6">
-          <div><p className="eyebrow">04 · Required-resource availability</p><h3 className="mt-1 text-lg font-semibold text-white">State what the field can actually support</h3><p className="mt-1 text-xs leading-5 text-slate-500">“Unavailable” is a preliminary blocker in this screen. “Unknown” remains unresolved and is never silently treated as available.</p></div>
+          <div><p className="eyebrow">04 · Required-resource availability</p><h3 className="mt-1 text-lg font-bold text-slate-900">State what the field can actually support</h3><p className="mt-1 text-xs leading-5 text-slate-500">“Unavailable” is a preliminary blocker in this screen. “Unknown” remains unresolved and is never silently treated as available.</p></div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <SelectField label="Reliable electrical power" value={form.electric_power} options={resourceOptions} onChange={(value) => setField("electric_power", value as ResourceState)} />
             <SelectField label="Injection-gas supply and compression" value={form.injection_gas_system} options={resourceOptions} onChange={(value) => setField("injection_gas_system", value as ResourceState)} />
@@ -280,24 +280,24 @@ export function ArtificialLiftPage() {
           <button type="button" className="secondary-button min-h-11" onClick={() => { setForm(initialForm); setResult(null); setError(null); }}>Clear inputs</button>
           <span className="text-xs text-slate-500">The API returns a qualitative shortlist; it does not choose equipment.</span>
         </div>
-        {error && <div role="alert" className="rounded-lg border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-100">{error}</div>}
+        {error && <div role="alert" className="rounded-lg border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-800">{error}</div>}
       </form>
 
       {result && (
         <section aria-live="polite" className="space-y-5">
           <div className="panel-card border-cyan/20 p-4 sm:p-6">
             <p className="eyebrow">Screen result · rule set {result.screen_version}</p>
-            <h3 className="mt-1 text-xl font-semibold text-white">Preliminary candidates for engineering evaluation</h3>
-            <p className="mt-3 text-sm leading-6 text-amber-100">{result.need_assessment}</p>
-            {result.lift_need_evidence && <p className="mt-2 rounded-lg border border-line bg-[#0c1523] p-3 text-sm leading-5 text-slate-300"><strong className="text-slate-100">User-provided evidence note:</strong> {result.lift_need_evidence}</p>}
-            <p className="mt-3 text-xs font-medium text-slate-400">{result.method_input_status === "insufficient_for_preliminary_comparison" ? "Method-input status: insufficient to order candidates; priority ranks are withheld." : "Method-input status: enough explicit inputs for a preliminary comparison only."}</p>
-            <p className="mt-3 text-sm leading-6 text-slate-300">{result.interpretation}</p>
-            <div className="mt-4 flex gap-2 rounded-lg border border-line bg-[#0c1523] p-3 text-xs leading-5 text-slate-400"><CircleHelp size={15} className="mt-0.5 shrink-0 text-cyan" /><span>{result.ranking_method}</span></div>
+            <h3 className="mt-1 text-xl font-bold text-slate-900">Preliminary candidates for engineering evaluation</h3>
+            <p className="mt-3 text-sm leading-6 text-amber-900">{result.need_assessment}</p>
+            {result.lift_need_evidence && <p className="mt-2 rounded-lg border border-line bg-[#eaf0f6] p-3 text-sm leading-5 text-slate-700"><strong className="text-slate-800">User-provided evidence note:</strong> {result.lift_need_evidence}</p>}
+            <p className="mt-3 text-xs font-medium text-slate-500">{result.method_input_status === "insufficient_for_preliminary_comparison" ? "Method-input status: insufficient to order candidates; priority ranks are withheld." : "Method-input status: enough explicit inputs for a preliminary comparison only."}</p>
+            <p className="mt-3 text-sm leading-6 text-slate-700">{result.interpretation}</p>
+            <div className="mt-4 flex gap-2 rounded-lg border border-line bg-[#eaf0f6] p-3 text-xs leading-5 text-slate-500"><CircleHelp size={15} className="mt-0.5 shrink-0 text-cyan" /><span>{result.ranking_method}</span></div>
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
-              {result.numeric_context.well_id && <span className="rounded-full border border-line px-3 py-1.5 text-slate-300">Well {result.numeric_context.well_id}</span>}
-              {result.numeric_context.current_oil_rate != null && <span className="rounded-full border border-line px-3 py-1.5 text-slate-300">Oil {result.numeric_context.current_oil_rate} {result.numeric_context.liquid_rate_unit}</span>}
-              {result.numeric_context.flowing_bhp != null && <span className="rounded-full border border-line px-3 py-1.5 text-slate-300">BHP {result.numeric_context.flowing_bhp} {result.numeric_context.pressure_unit}</span>}
-              {result.numeric_context.pressure_measurement_date && <span className="rounded-full border border-line px-3 py-1.5 text-slate-300">Pressure date {result.numeric_context.pressure_measurement_date}</span>}
+              {result.numeric_context.well_id && <span className="rounded-full border border-line px-3 py-1.5 text-slate-700">Well {result.numeric_context.well_id}</span>}
+              {result.numeric_context.current_oil_rate != null && <span className="rounded-full border border-line px-3 py-1.5 text-slate-700">Oil {result.numeric_context.current_oil_rate} {result.numeric_context.liquid_rate_unit}</span>}
+              {result.numeric_context.flowing_bhp != null && <span className="rounded-full border border-line px-3 py-1.5 text-slate-700">BHP {result.numeric_context.flowing_bhp} {result.numeric_context.pressure_unit}</span>}
+              {result.numeric_context.pressure_measurement_date && <span className="rounded-full border border-line px-3 py-1.5 text-slate-700">Pressure date {result.numeric_context.pressure_measurement_date}</span>}
             </div>
           </div>
 
@@ -307,10 +307,10 @@ export function ArtificialLiftPage() {
               return (
                 <article key={candidate.method} className="panel-card p-4 sm:p-6">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div><p className="eyebrow">{candidate.priority_rank ? `Provisional order ${candidate.priority_rank}${candidate.tied_rank ? " · tied" : ""}` : "Not ranked · insufficient inputs"}</p><h3 className="mt-1 text-lg font-semibold text-white">{candidate.method}</h3></div>
+                    <div><p className="eyebrow">{candidate.priority_rank ? `Provisional order ${candidate.priority_rank}${candidate.tied_rank ? " · tied" : ""}` : "Not ranked · insufficient inputs"}</p><h3 className="mt-1 text-lg font-bold text-slate-900">{candidate.method}</h3></div>
                     <span className={`inline-flex w-fit rounded-full border px-3 py-1.5 text-xs font-medium ${style.className}`}>{style.label}</span>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-400">{candidate.basis}</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-500">{candidate.basis}</p>
                   <div className="mt-4 grid gap-4 lg:grid-cols-2">
                     <div>
                       <ResultList title="Supporting inputs" items={candidate.supporting_evidence} />
@@ -318,9 +318,9 @@ export function ArtificialLiftPage() {
                       <ResultList title="Explicit blockers" items={candidate.hard_blocks} tone="blocked" />
                       <ResultList title="Unknown / missing for this method" items={candidate.missing_inputs} tone="caution" />
                     </div>
-                    <div className="rounded-lg border border-line bg-[#0c1523] p-4">
-                      <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Next engineering checks</h4>
-                      <ul className="mt-3 space-y-2">{candidate.next_checks.map((check) => <li key={check} className="text-sm leading-5 text-slate-300">• {check}</li>)}</ul>
+                    <div className="rounded-lg border border-line bg-[#eaf0f6] p-4">
+                      <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Next engineering checks</h4>
+                      <ul className="mt-3 space-y-2">{candidate.next_checks.map((check) => <li key={check} className="text-sm leading-5 text-slate-700">• {check}</li>)}</ul>
                     </div>
                   </div>
                 </article>
@@ -329,22 +329,22 @@ export function ArtificialLiftPage() {
           </div>
 
           <article className="panel-card p-4 sm:p-6">
-            <details className="mb-5 rounded-lg border border-line bg-[#0c1523] p-3">
-              <summary className="cursor-pointer text-sm font-medium text-slate-300">Show submitted input snapshot</summary>
-              <dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{Object.entries(result.input_context).map(([key, value]) => <div key={key} className="rounded-md border border-line/70 px-3 py-2"><dt className="text-[11px] uppercase tracking-wide text-slate-500">{key.replaceAll("_", " ")}</dt><dd className="mt-1 break-words text-sm text-slate-200">{value === null ? "Unknown / not supplied" : String(value)}</dd></div>)}</dl>
+            <details className="mb-5 rounded-lg border border-line bg-[#eaf0f6] p-3">
+              <summary className="cursor-pointer text-sm font-medium text-slate-700">Show submitted input snapshot</summary>
+              <dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{Object.entries(result.input_context).map(([key, value]) => <div key={key} className="rounded-md border border-line/70 px-3 py-2"><dt className="text-[11px] uppercase tracking-wide text-slate-500">{key.replaceAll("_", " ")}</dt><dd className="mt-1 break-words text-sm text-slate-700">{value === null ? "Unknown / not supplied" : String(value)}</dd></div>)}</dl>
             </details>
-            <h3 className="text-lg font-semibold text-white">Information still required for a defensible selection</h3>
-            <p className="mt-1 text-sm text-slate-400">These are not inferred from production decline, and the screen does not calculate them.</p>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2">{result.global_missing_information.map((item) => <li key={item} className="flex gap-2 text-sm leading-5 text-slate-300"><AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-200" /><span>{item}</span></li>)}</ul>
+            <h3 className="text-lg font-bold text-slate-900">Information still required for a defensible selection</h3>
+            <p className="mt-1 text-sm text-slate-500">These are not inferred from production decline, and the screen does not calculate them.</p>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">{result.global_missing_information.map((item) => <li key={item} className="flex gap-2 text-sm leading-5 text-slate-700"><AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-800" /><span>{item}</span></li>)}</ul>
             <div className="mt-5 border-t border-line pt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Methodology references</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Methodology references</p>
               <ul className="mt-2 space-y-2">{result.sources.map((source) => {
                 const [citation, url] = source.split(" — ");
                 return <li key={source} className="text-sm"><a className="subtle-link" href={url} target="_blank" rel="noreferrer">{citation}</a></li>;
               })}</ul>
             </div>
           </article>
-          <p className="rounded-lg border border-amber-300/25 bg-amber-300/5 p-4 text-sm leading-6 text-amber-100">This prototype does not solve IPR/VLP or nodal analysis, confirm reservoir drive mechanism, model lift design, size equipment, compare project economics, or validate an AI recommendation. Obtain a well-specific design and qualified engineering review before making an operational decision. See the <Link className="subtle-link" to="/reservoir">reservoir context</Link> and project methodology references.</p>
+          <p className="rounded-lg border border-amber-300/25 bg-amber-300/5 p-4 text-sm leading-6 text-amber-900">This prototype does not solve IPR/VLP or nodal analysis, confirm reservoir drive mechanism, model lift design, size equipment, compare project economics, or validate an AI recommendation. Obtain a well-specific design and qualified engineering review before making an operational decision. See the <Link className="subtle-link" to="/reservoir">reservoir context</Link> and project methodology references.</p>
         </section>
       )}
     </section>

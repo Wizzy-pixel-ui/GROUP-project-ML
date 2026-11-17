@@ -17,7 +17,7 @@ const PredictionsPage = lazy(() => import("../pages/PredictionsPage").then((modu
 const ReportsPage = lazy(() => import("../pages/ReportsPage").then((module) => ({ default: module.ReportsPage })));
 
 function LoadingRoute({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<section role="status" className="panel-card p-6 text-sm text-slate-400">Loading analytics workspace…</section>}>{children}</Suspense>;
+  return <Suspense fallback={<section role="status" className="panel-card section-enter p-6 text-sm font-bold text-slate-600">Loading analytics workspace…</section>}>{children}</Suspense>;
 }
 
 export function AppRoutes() {

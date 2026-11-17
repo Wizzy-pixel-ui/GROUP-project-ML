@@ -33,7 +33,9 @@ describe("application shell", () => {
     renderRoute();
     expect(await screen.findByRole("heading", { name: "Well analytics workspace" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "No analysis loaded", level: 3 })).toBeInTheDocument();
-    expect(screen.getByText(/does not confirm reservoir drive mechanism/i)).toBeInTheDocument();
+    expect(screen.getByText(/use Lift screening to compare methods/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open lift screening/i })).toHaveAttribute("href", "/artificial-lift");
+    expect(screen.getByText(/does not solve IPR\/VLP or nodal analysis/i)).toBeInTheDocument();
   });
 
   it("opens the upload workflow and states the API's actual required schema", async () => {

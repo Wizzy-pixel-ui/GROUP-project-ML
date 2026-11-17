@@ -38,14 +38,14 @@ export function SettingsPage() {
     <section className="mx-auto max-w-3xl space-y-6">
       <div>
         <p className="eyebrow">Connection and session behavior</p>
-        <h2 className="mt-2 text-2xl font-semibold text-white">Settings</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-400">Set the FastAPI origin for this browser tab/session. No authentication token or API secret belongs in this form.</p>
+        <h2 className="mt-2 text-2xl font-bold text-slate-900">Settings</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">Set the FastAPI origin for this browser tab/session. No authentication token or API secret belongs in this form.</p>
       </div>
       <article className="panel-card p-5 sm:p-7">
         <div className="flex items-start gap-3">
           <span className="rounded-lg border border-cyan/20 bg-cyan/10 p-2 text-cyan"><Server size={18} /></span>
           <div>
-            <h3 className="text-base font-semibold text-white">FastAPI base URL</h3>
+            <h3 className="text-base font-bold text-slate-900">FastAPI base URL</h3>
             <p className="mt-1 text-xs leading-5 text-slate-500">Default: <code>http://127.0.0.1:8000</code>. Local Vite origin <code>http://localhost:5173</code> is allowed by the current backend CORS configuration.</p>
           </div>
         </div>
@@ -62,15 +62,15 @@ export function SettingsPage() {
       </article>
       <article className="rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-5">
         <div className="flex items-start gap-3">
-          <ShieldAlert size={18} className="mt-0.5 shrink-0 text-amber-200" />
+          <ShieldAlert size={18} className="mt-0.5 shrink-0 text-amber-800" />
           <div>
-            <h3 className="text-sm font-semibold text-amber-100">Local prototype security</h3>
+            <h3 className="text-sm font-bold text-amber-900">Local prototype security</h3>
             <p className="mt-2 text-xs leading-5 text-amber-50/70">The current API has no user authentication, access control, or persistent ownership boundaries. Keep it on a trusted local environment. Do not paste confidential field histories into an unauthenticated public endpoint.</p>
           </div>
         </div>
       </article>
-      <div className="panel-card p-5 text-sm text-slate-400">
-        <p className="font-medium text-slate-200">Session data</p>
+      <div className="panel-card p-5 text-sm text-slate-500">
+        <p className="font-medium text-slate-700">Session data</p>
         <p className="mt-2 text-xs leading-5 text-slate-500">Uploaded production data will be held in browser memory while the session is active. This initial frontend does not create user accounts, a database, saved analysis history, or durable model storage.</p>
       </div>
     </section>

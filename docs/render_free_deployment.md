@@ -49,9 +49,9 @@ This is a test deployment, not a production service. Uploads are processed in re
 
 ## Engineering and security boundaries
 
-The app provides production-history analysis, Arps exponential/harmonic/hyperbolic decline fits, persistence comparison, a current HistGradientBoosting oil-rate workflow, transparent observed-threshold checks, measured pressure context, and CSV/JSON exports. It is a research prototype, not operating guidance.
+The app provides production-history analysis, Arps exponential/harmonic/hyperbolic decline fits, persistence comparison, a current HistGradientBoosting oil-rate workflow, transparent observed-threshold checks, measured pressure context, an input-driven preliminary lift screen, and CSV/JSON exports. The interface uses a light blue-gray neumorphic visual system with soft surfaces, clear typography, readable animated charts, and responsive mobile navigation. It is a research prototype, not operating guidance.
 
-It does **not** currently calculate IPR/VLP or nodal operating points; forecast pressure; classify solution-gas-drive behavior; predict a validated future natural-flow transition; select or recommend artificial lift; or display true 3D well/reservoir geometry. The observed threshold rule is not a learned transition model. Volve field history does not establish solution-gas-drive lift-transition labels. Do not use the app to make production, workover, or equipment decisions.
+The lift screen is a transparent rule-based shortlist for engineering evaluation; it is not a final method recommendation, proof that lift is needed, or an equipment design. The app does **not** calculate IPR/VLP or nodal operating points; forecast pressure; classify solution-gas-drive behavior; predict a validated future natural-flow transition; or display true 3D well/reservoir geometry. The observed threshold rule is not a learned transition model. Volve field history does not establish solution-gas-drive lift-transition labels. Do not use the app alone to make production, workover, or equipment decisions.
 
 The HTTP Basic gate is one shared password and does not provide individual identity, authorization scopes, audit logging, per-user isolation, or production-grade security. Use a separate, unique password for the group test, keep it in Render Secrets, and rotate it if it is shared beyond the intended group.
 

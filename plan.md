@@ -49,16 +49,16 @@ Navigation items must lead to a functional page or a plainly marked “not imple
 
 The requested style is a professional petroleum-engineering analytics interface, so we will reuse it rather than invent a competing brand direction.
 
-- **Design movement:** Industrial control-room analytics, restrained and information-first.
-- **Core principles:** evidence before decoration; units and provenance adjacent to values; warnings are visually distinct from measurements; controls remain predictable and keyboard-accessible.
-- **Color philosophy:** deep navy/charcoal surfaces reduce glare; cool cyan/blue marks data and active navigation; neutral text preserves readability; green is reserved for positive checks, amber for caution, red for critical warnings. Color is never the only carrier of meaning.
-- **Layout paradigm:** persistent compact left navigation with a broad working canvas, top-level API/data status, and context-specific analysis panels; chart/table layouts adapt to screen width rather than forcing a uniform card grid.
-- **Signature elements:** restrained pressure/production linework; compact unit/provenance chips; consistent state badges (“Measured”, “Derived”, “Modelled”, “Synthetic”, “Unavailable”).
+- **Design movement:** Light neumorphic analytics dashboard based on the user's supplied reference: tactile pale blue-gray surfaces, soft raised/inset shadows, and restrained saturated blue.
+- **Core principles:** legibility before softness; white-on-pale contrast with strong dark text; units and provenance adjacent to values; warnings distinct from measurements; keyboard-accessible, responsive controls.
+- **Color philosophy:** pale cool blue-gray canvas and slightly brighter card surfaces create gentle depth; blue indicates primary action and measured series; dark slate provides clear typography; green/amber/red are reserved for status/caution/blocking. Color is never the only carrier of meaning.
+- **Layout paradigm:** persistent compact light sidebar with a broad working canvas, top-level API/data status, soft-card analytic panels, and chart/table layouts that adapt to screen width.
+- **Signature elements:** softly raised white panels and inset wells; animated cobalt primary buttons; bold date/rate charts with readable axes, soft grids and shadowed tooltips; consistent state badges (“Measured”, “Derived”, “Modelled”, “Synthetic”, “Unavailable”).
 - **Interaction philosophy:** deliberate upload → preview/map → validate → analyze workflow; no silent unit conversion or inferred drive/lift state. Every generated estimate exposes its source, settings, assumptions and warnings.
-- **Animation:** minimal state transitions and chart-entry motion; no ambient motion or fake real-time data. Honor reduced-motion preferences.
+- **Animation:** brief button lift/press feedback, subtle page-entry and chart draw-in; no ambient motion or fake real-time data. Honor reduced-motion preferences.
 - **Typography:** readable technical sans-serif for interface text paired with tabular numerals for measurements; clear hierarchy for page title, section, unit labels, table/chart annotations.
 - **Brand essence:** a traceable research cockpit for comparing well-history evidence and prototype forecasts; **careful, technical, candid**.
-- **Brand voice:** concise, measured, explicit about unknowns. Example: “Arps curve fitted to 18 positive-rate observations.” “Lift recommendation unavailable—review the engineering inputs and evidence first.”
+- **Brand voice:** concise, measured, explicit about evidence and next steps. Example: “Arps curve fitted to 18 positive-rate observations.” “Review the preliminary lift shortlist against well-specific design and facility data.”
 - **Wordmark/logo concept:** compact “SGD” mark built from a simple declining production trace meeting a pressure baseline; no stock oil-rig imagery. Use text fallback if no reviewed asset is available.
 - **Signature brand color:** cool cyan used for active selections and primary series, never for warning states.
 
